@@ -20,10 +20,9 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 
-
+	"github.com/fatih/color"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
-	"github.com/fatih/color"
 )
 
 var cfgFile string
@@ -45,13 +44,12 @@ to quickly create a Cobra application.`,
 
 //Color Definition
 var (
-	red = color.New(color.FgRed).PrintlnFunc()
-	blue = color.New(color.FgBlue).PrintlnFunc()
-	green = color.New(color.FgGreen).PrintlnFunc()
+	red    = color.New(color.FgRed).PrintlnFunc()
+	blue   = color.New(color.FgBlue).PrintlnFunc()
+	green  = color.New(color.FgGreen).PrintlnFunc()
 	yellow = color.New(color.FgYellow).PrintlnFunc()
-	cyan = color.New(color.FgCyan).PrintlnFunc()
+	cyan   = color.New(color.FgCyan).PrintlnFunc()
 )
-
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
