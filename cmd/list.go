@@ -20,12 +20,10 @@ import (
 	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/AlecAivazis/survey/v2"
 )
 // listCmd represents the list command
 var listCmd = &cobra.Command{
@@ -39,10 +37,14 @@ var listCmd = &cobra.Command{
 		if argsLen > 1 {
 			red("Too many Arguments")
 			os.Exit(1)
+		} else if argsLen == 0 {
+			red("At least one argument is needed.")
+			os.Exit(1)
 		}
 
 		objType := args[0]
 
+		// Call function according to the second third parameter
 		switch {
 		case objType == "cluster":
 			list_clusters()
@@ -51,7 +53,6 @@ var listCmd = &cobra.Command{
 		default:
 			red("Please follow the direction")
 		}
-
 
 	},
 }
@@ -68,26 +69,18 @@ func init() {
 
 // List Clusters
 func list_clusters()  {
-	svc := get_eks_session()
-	clusters := get_eks_clusters(svc)
+	svc := _get_eks_session()
+	clusters := _get_eks_clusters(svc)
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Name", "Status", "Version", "Arn", "Endpoint"})
 	for _, cluster := range clusters {
-		inputParamsDesc := &eks.DescribeClusterInput{Name: aws.String(cluster)}
-
-		clusterInfo, err := svc.DescribeCluster(inputParamsDesc)
-		if err != nil {
-			red(err)
-			os.Exit(1)
-		}
-
+		clusterInfo := _get_cluster_info_with_session(svc, cluster)
 		arn := clusterInfo.Cluster.Arn
 		endpoint := clusterInfo.Cluster.Endpoint
 		version := clusterInfo.Cluster.Version
 		status := clusterInfo.Cluster.Status
 
-		//tableData = append(tableData, []string{*cluster, *status, *version, *arn, *endpoint})
 		table.Append([]string{cluster, *status, *version, *arn, *endpoint})
 	}
 
@@ -106,22 +99,11 @@ func list_nodegroups() {
 
 	// If cluster is not given then choose!
 	if len(cluster) <= 0 {
-		options := get_eks_clusters(nil)
-		prompt := &survey.Select{
-			Message: "Choose a color:",
-			Options: options,
-		}
-		survey.AskOne(prompt, &cluster)
+		cluster = _choose_cluster()
 	}
 
-	svc := get_eks_session()
-
-	inputParams := &eks.ListNodegroupsInput{ClusterName: aws.String(cluster), MaxResults: aws.Int64(100)}
-	res, err := svc.ListNodegroups(inputParams)
-	if err != nil {
-		red(err)
-		os.Exit(1)
-	}
+	svc := _get_eks_session()
+	res := _get_node_group_list_with_session(svc, cluster)
 
 	// Tables for showing outputs
 	table := tablewriter.NewWriter(os.Stdout)
@@ -151,12 +133,15 @@ func list_nodegroups() {
 
 		// Label Map(Object)
 		LabelsObj := info.Nodegroup.Labels
+
 		labels := ""
-		for key, value := range LabelsObj {
-			line := key+"="+*value+","
-			labels += line
+		if (len(LabelsObj) > 0 ) {
+			for key, value := range LabelsObj {
+				line := key+"="+*value+","
+				labels += line
+			}
+			labels = labels[:len(labels)-1]
 		}
-		labels = labels[:len(labels)-1]
 
 		// InstanceTypes Array of Map(Object)
 		AutoScalingGroupsArray := info.Nodegroup.Resources.AutoScalingGroups
@@ -178,35 +163,4 @@ func list_nodegroups() {
 		table.Append([]string{*nodegroup, *Status, instanceTypes, labels, strconv.FormatInt(*MinSize, 10), strconv.FormatInt(*DesiredSize, 10), strconv.FormatInt(*MaxSize, 10), autoScalingGroups, strconv.FormatInt(*DiskSize, 10)})
 	}
 	table.Render()
-}
-
-
-// Get EKS Session
-func get_eks_session() *eks.EKS {
-	awsRegion := viper.GetString("region")
-	mySession := session.Must(session.NewSession())
-	svc := eks.New(mySession, &aws.Config{Region: aws.String(awsRegion)})
-
-	return svc
-}
-
-// Get All EKS Cluster
-func get_eks_clusters(svc *eks.EKS) []string {
-	if(svc == nil){
-		svc = get_eks_session()
-	}
-
-	inputParams := &eks.ListClustersInput{MaxResults: aws.Int64(100)}
-	res, err := svc.ListClusters(inputParams)
-	if err != nil {
-		red(err)
-		os.Exit(1)
-	}
-
-	var ret []string
-	for _, cluster := range res.Clusters {
-		ret = append(ret, *cluster)
-	}
-
-	return ret
 }
