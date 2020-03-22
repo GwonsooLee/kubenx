@@ -19,8 +19,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -70,7 +68,7 @@ func init() {
 // List Clusters
 func list_clusters()  {
 	svc := _get_eks_session()
-	clusters := _get_eks_clusters(svc)
+	clusters := _get_eks_cluster_list(svc)
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Name", "Status", "Version", "Arn", "Endpoint"})
@@ -103,22 +101,16 @@ func list_nodegroups() {
 	}
 
 	svc := _get_eks_session()
-	res := _get_node_group_list_with_session(svc, cluster)
+	nodegroupList := _get_node_group_list(svc, cluster)
 
 	// Tables for showing outputs
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"NAME", "STATUS", "INSTANCE TYPE", "LABELS", "MIN SIZE", "DISIRED SIZE", "MAX SIZE", "AUTOSCALING GROUPDS", "DISK SIZE"})
 	// Get node group information
-	for _, nodegroup := range res.Nodegroups {
-		ngParams := &eks.DescribeNodegroupInput{ClusterName: aws.String(cluster), NodegroupName: aws.String(*nodegroup)}
-		info, err := svc.DescribeNodegroup(ngParams)
-		if err != nil {
-			red(err)
-			os.Exit(1)
-		}
+	for _, nodegroup := range nodegroupList {
+		info := _get_nodegroup_info_with_session(svc, cluster, nodegroup)
 
 		// Retrieve Values
-		//
 		//Status string
 		Status := info.Nodegroup.Status
 
@@ -160,7 +152,7 @@ func list_nodegroups() {
 		// DiskSize int64
 		DiskSize := info.Nodegroup.DiskSize
 
-		table.Append([]string{*nodegroup, *Status, instanceTypes, labels, strconv.FormatInt(*MinSize, 10), strconv.FormatInt(*DesiredSize, 10), strconv.FormatInt(*MaxSize, 10), autoScalingGroups, strconv.FormatInt(*DiskSize, 10)})
+		table.Append([]string{nodegroup, *Status, instanceTypes, labels, strconv.FormatInt(*MinSize, 10), strconv.FormatInt(*DesiredSize, 10), strconv.FormatInt(*MaxSize, 10), autoScalingGroups, strconv.FormatInt(*DiskSize, 10)})
 	}
 	table.Render()
 }

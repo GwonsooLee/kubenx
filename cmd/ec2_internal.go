@@ -45,3 +45,4 @@ func _get_subnet_info(svc *ec2.EC2, subnetIds []*string) *ec2.DescribeSubnetsOut
 
 	return ret
 }
+
