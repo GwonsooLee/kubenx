@@ -69,9 +69,13 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kubenx.yaml)")
 	rootCmd.PersistentFlags().StringP("region", "r", "ap-northeast-2", "AWS region for service")
+	rootCmd.PersistentFlags().StringP("cluster", "c", "", "Name of EKS Cluster")
+	rootCmd.PersistentFlags().StringP("securitygroup", "s", "", "Name of Security Group")
 
 	// Viper Binding
 	viper.BindPFlag("region", rootCmd.PersistentFlags().Lookup("region"))
+	viper.BindPFlag("cluster", rootCmd.PersistentFlags().Lookup("cluster"))
+	viper.BindPFlag("securitygroup", rootCmd.PersistentFlags().Lookup("securitygroup"))
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

@@ -69,13 +69,6 @@ var (
 )
 
 func init() {
-	//Local Option
-	getCmd.Flags().StringP("cluster", "c", "", "Name of EKS Cluster")
-	getCmd.Flags().StringP("securitygroup", "s", "", "Name of Security Group")
-
-	//Bind Flag to viper
-	viper.BindPFlag("cluster", getCmd.Flags().Lookup("cluster"))
-	viper.BindPFlag("securitygroup", getCmd.Flags().Lookup("securitygroup"))
 	rootCmd.AddCommand(getCmd)
 }
 
@@ -85,7 +78,6 @@ func _get_detail_info_of_cluster()  {
 
 	// Check the cluster First
 	cluster := _choose_cluster()
-
 
 	// 1. Get Cluster Information
 	clusterInfo := _get_cluster_info_with_session(svc, cluster)
