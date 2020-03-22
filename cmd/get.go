@@ -54,6 +54,8 @@ var getCmd = &cobra.Command{
 			_get_detail_info_of_cluster()
 		case objType == "nodegroup" || objType == "ng":
 			_get_detail_info_of_nodegroup()
+		case objType == "securitygroup" || objType == "sg":
+			_get_detail_info_of_security_group()
 		default:
 			red("Please follow the direction")
 		}
@@ -69,9 +71,11 @@ var (
 func init() {
 	//Local Option
 	getCmd.Flags().StringP("cluster", "c", "", "Name of EKS Cluster")
+	getCmd.Flags().StringP("securitygroup", "s", "", "Name of Security Group")
 
 	//Bind Flag to viper
 	viper.BindPFlag("cluster", getCmd.Flags().Lookup("cluster"))
+	viper.BindPFlag("securitygroup", getCmd.Flags().Lookup("securitygroup"))
 	rootCmd.AddCommand(getCmd)
 }
 
@@ -80,13 +84,7 @@ func _get_detail_info_of_cluster()  {
 	svc := _get_eks_session()
 
 	// Check the cluster First
-	cluster := ""
-	cluster = viper.GetString("cluster")
-
-	// If cluster is not given then choose!
-	if len(cluster) <= 0 {
-		cluster = _choose_cluster()
-	}
+	cluster := _choose_cluster()
 
 
 	// 1. Get Cluster Information
@@ -149,22 +147,11 @@ func _get_detail_info_of_nodegroup()  {
 	svc := _get_eks_session()
 
 	// Check the cluster First
-	cluster := ""
-	cluster = viper.GetString("cluster")
-
-	// If cluster is not given then choose!
-	if len(cluster) <= 0 {
-		cluster = _choose_cluster()
-	}
+	cluster := _choose_cluster()
 
 	//Choose Nodegroup
-	nodegroup := ""
-	nodegroup = viper.GetString("nodegroup")
+	nodegroup := _choose_nodegroup(cluster)
 
-	// If nogegroup is not given then choose!
-	if len(nodegroup) <= 0 {
-		nodegroup = _choose_nodegroup(cluster)
-	}
 	// NodeGroup Information Table
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"NAME", "STATUS", "INSTANCE TYPE", "LABELS", "MIN SIZE", "DISIRED SIZE", "MAX SIZE", "AUTOSCALING GROUPDS", "DISK SIZE"})
@@ -227,4 +214,22 @@ func _get_detail_info_of_nodegroup()  {
 	table.Render()
 	fmt.Println()
 	instanceTable.Render()
+}
+
+// Get Single Security Group information
+func _get_detail_info_of_security_group()  {
+	groupId := viper.GetString("securitygroup")
+	if len(groupId) <= 0 {
+		red("You need to set --securitygroup <group id>")
+		os.Exit(1)
+	}
+
+	//Get Security Group Information
+	info := _get_security_group_detail(nil, []*string{&groupId})
+
+	//Print Security Group
+	group := info.SecurityGroups[0]
+	table := _print_security_group_info(group)
+
+	table.Render()
 }

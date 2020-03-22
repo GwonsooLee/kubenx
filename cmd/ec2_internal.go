@@ -1,12 +1,14 @@
 package cmd
 import (
 	"os"
+	"strconv"
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/aws"
 
 	"github.com/spf13/viper"
+	"github.com/olekukonko/tablewriter"
 )
 
 // Get EC2 Session
@@ -46,3 +48,59 @@ func _get_subnet_info(svc *ec2.EC2, subnetIds []*string) *ec2.DescribeSubnetsOut
 	return ret
 }
 
+// Get Security Group Information
+func _get_security_group_detail(svc *ec2.EC2, groupIds []*string) *ec2.DescribeSecurityGroupsOutput{
+	if (svc == nil){
+		svc = _get_ec2_session()
+	}
+
+	inputParam := &ec2.DescribeSecurityGroupsInput{GroupIds: groupIds}
+	ret, err := svc.DescribeSecurityGroups(inputParam)
+
+	if err != nil {
+		red(err)
+		os.Exit(1)
+	}
+
+	return ret
+}
+
+// Print Security Group information
+func _print_security_group_info(group *ec2.SecurityGroup) *tablewriter.Table  {
+	var ipProtocol string
+	var portRange string
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Type", "Protocol", "Port Range", "Destination", "Description"})
+
+	// Inbound Traffic
+	typeStr := "Inbound"
+	for _, inbound := range group.IpPermissions {
+		// Ip Protocol
+		if *inbound.IpProtocol == "-1" {
+			ipProtocol = "All Traffic"
+			portRange = "All"
+		} else {
+			ipProtocol = *inbound.IpProtocol
+			portRange = strconv.FormatInt(*inbound.FromPort, 10)
+		}
+
+		if (inbound.IpRanges != nil) {
+			for _, cidrObj := range inbound.IpRanges {
+				table.Append([]string{typeStr, ipProtocol, portRange, *cidrObj.CidrIp, *cidrObj.Description})
+			}
+		}
+
+		if (inbound.UserIdGroupPairs != nil) {
+			for _, pair := range inbound.UserIdGroupPairs {
+				table.Append([]string{typeStr, ipProtocol, portRange, *pair.GroupId, *pair.Description})
+			}
+		}
+
+	}
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.SetRowLine(true)
+	table.SetCaption(true, *group.GroupName)
+
+	return table
+}

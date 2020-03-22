@@ -46,17 +46,24 @@ func _get_eks_cluster_list(svc *eks.EKS) []string {
 
 // Choose cluster
 func _choose_cluster() string {
-	var ret string
-	options := _get_eks_cluster_list(nil)
-	prompt := &survey.Select{
-		Message: "Choose a cluster:",
-		Options: options,
-	}
-	survey.AskOne(prompt, &ret)
 
-	if (ret == "") {
-		red("You canceled the choice")
-		os.Exit(1)
+	// Check the cluster First
+	var ret string
+	ret = viper.GetString("cluster")
+
+	// If cluster is not given then choose!
+	if len(ret) <= 0 {
+		options := _get_eks_cluster_list(nil)
+		prompt := &survey.Select{
+			Message: "Choose a cluster:",
+			Options: options,
+		}
+		survey.AskOne(prompt, &ret)
+
+		if (ret == "") {
+			red("You canceled the choice")
+			os.Exit(1)
+		}
 	}
 
 	return ret
@@ -100,16 +107,21 @@ func _get_node_group_list(svc *eks.EKS, cluster string) []string {
 // Choose cluster
 func _choose_nodegroup(cluster string) string {
 	var ret string
-	options := _get_node_group_list(nil, cluster)
-	prompt := &survey.Select{
-		Message: "Choose a nodegroup:",
-		Options: options,
-	}
-	survey.AskOne(prompt, &ret)
+	ret = viper.GetString("nodegroup")
 
-	if (ret == "") {
-		red("You canceled the choice")
-		os.Exit(1)
+	// If nogegroup is not given then choose!
+	if len(ret) <= 0 {
+		options := _get_node_group_list(nil, cluster)
+		prompt := &survey.Select{
+			Message: "Choose a nodegroup:",
+			Options: options,
+		}
+		survey.AskOne(prompt, &ret)
+
+		if (ret == "") {
+			red("You canceled the choice")
+			os.Exit(1)
+		}
 	}
 
 	return ret
