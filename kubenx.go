@@ -21,6 +21,7 @@ import (
 	"errors"
 	"context"
 	"github.com/GwonsooLee/kubenx/cmd/kubenx/app"
+	"github.com/GwonsooLee/kubenx/pkg"
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 		if errors.Is(err, context.Canceled) {
 			Logger.Debugln("ignore error since context is cancelled:", err)
 		} else {
-			cmd.Red(err)
+			color.Red.Fprintf(os.Stderr, err)
 			os.Exit(1)
 		}
 	}
