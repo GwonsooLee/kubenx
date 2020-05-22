@@ -21,7 +21,7 @@ import (
 	"errors"
 	"context"
 	"github.com/GwonsooLee/kubenx/cmd/kubenx/app"
-	"github.com/GwonsooLee/kubenx/pkg"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 )
 
 func main() {
