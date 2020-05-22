@@ -29,7 +29,7 @@ func main() {
 		if errors.Is(err, context.Canceled) {
 			Logger.Debugln("ignore error since context is cancelled:", err)
 		} else {
-			color.Red.Fprintf(os.Stderr, err)
+			color.Red.Fprint(os.Stderr, err)
 			os.Exit(1)
 		}
 	}

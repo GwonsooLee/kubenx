@@ -19,18 +19,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// getCmd represents the get command
-var getCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Get command",
-	Long: `Get command for retrieve inforamtion`,
-	Run: func(cmd *cobra.Command, args []string) {
-		//yellow(fmt.Sprintf("[usage] kubenx get [subcommand]\nAvailable subcommand:"))
-		//blue(fmt.Sprintf("%v", validArgs))
-	},
-	Aliases: []string{"ge"},
+//Get new get function
+func NewCmdGet() *cobra.Command {
+	usage := "get"
+	return NewCmd(usage).
+			WithDescription("Get kubernetes information").
+			WithLongDescription("Get command for retrieve inforamtion").
+			SetAliases([]string{"ge"}).
+			AddCommand(NewCmdGetPod()).
+			RunWithNoArgs(nil)
 }
 
-func init() {
-	rootCmd.AddCommand(getCmd)
-}

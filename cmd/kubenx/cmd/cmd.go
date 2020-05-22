@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"context"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
-	"io"
 	"github.com/spf13/cobra"
 	"k8s.io/kubectl/pkg/util/templates"
-	"os"
 )
 
 //Get New Kubenx Command
@@ -34,7 +35,7 @@ You can find more information in https://github.com/GwonsooLee/kubenx`,
 		{
 			Message: "Get Information of kubernetes cluster",
 			Commands: []*cobra.Command{
-				//NewCmdGet(),
+				NewCmdGet(),
 			},
 		},
 	}
@@ -93,4 +94,13 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+
+func alwaysSucceedWhenCancelled(ctx context.Context, err error) error {
+	// if the context was cancelled act as if all is well
+	if err != nil && ctx.Err() == context.Canceled {
+		return nil
+	}
+	return err
 }

@@ -16,9 +16,25 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
+	"io"
 	"os"
 	"github.com/spf13/cobra"
 )
+
+func NewCmdGetPod() *cobra.Command {
+	return NewCmd("pod").
+			WithDescription("Get pod list").
+			SetAliases([]string{"po", "pods"}).
+			RunWithNoArgs(execGetPod)
+
+}
+
+func execGetPod(ctx context.Context, out io.Writer) error {
+	return runExecutor(ctx, func(executor Executor) error {
+
+	})
+}
 
 // podCmd represents the pod command
 var getPodCmd = &cobra.Command{
@@ -31,7 +47,6 @@ var getPodCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		_get_pod_list()
 	},
 	Aliases: []string{"po", "pods"},
 }
@@ -51,10 +66,3 @@ var portForwardCmd = &cobra.Command{
 	Aliases: []string{"pf"},
 }
 
-func init() {
-	//Connect get pod command to root get
-	getCmd.AddCommand(getPodCmd)
-
-	// Connect commands to root command
-	rootCmd.AddCommand(portForwardCmd)
-}
