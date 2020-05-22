@@ -39,6 +39,7 @@ func NewCmdGetPod() *cobra.Command {
 	return NewCmd("pod").
 		WithDescription("Get pod list").
 		SetAliases([]string{"po", "pods"}).
+		SetFlags().
 		RunWithNoArgs(execGetPod)
 }
 

@@ -91,6 +91,28 @@ func getCurrentConfig() (*api.Config, error) {
 	return &currentConfig, nil
 }
 
+func getConfigFromFlag() (*rest.Config, error) {
+	//Get kubernetes Client
+	var kubeconfig *string
+	if home := homeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+
+	flag.Parse()
+
+	// use the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+
+
 
 // Get current namespace
 func _get_namespace() string {

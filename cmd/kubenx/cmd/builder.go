@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"io"
 	"context"
 	"github.com/spf13/cobra"
+	"io"
 )
 
 type Builder interface {
@@ -12,6 +12,7 @@ type Builder interface {
 	SetAliases(alias []string) Builder
 	AddCommand(cmd *cobra.Command) Builder
 	AddGetGroups() Builder
+	SetFlags() Builder
 	RunWithNoArgs(action func(context.Context, io.Writer) error) *cobra.Command
 	RunWithArgs(action func(context.Context, io.Writer, []string) error) *cobra.Command
 	RunWithArgsAndCmd(action func(context.Context, io.Writer, *cobra.Command, []string) error) *cobra.Command
@@ -73,6 +74,11 @@ func (b builder) RunWithArgsAndCmd(function func(context.Context, io.Writer, *co
 	return &b.cmd
 }
 
+func (b builder) SetFlags() Builder {
+	SetCommandFlags(&b.cmd)
+	return b
+}
+
 // Set Child of command
 func (b builder) AddCommand(child *cobra.Command) Builder {
 	b.cmd.AddCommand(child)
@@ -85,6 +91,7 @@ func (b builder) AddGetGroups() Builder {
 	b.cmd.AddCommand(NewCmdGetService())
 	b.cmd.AddCommand(NewCmdGetDeployment())
 	b.cmd.AddCommand(NewCmdGetCluster())
+	b.cmd.AddCommand(NewCmdGetIngress())
 	return b
 }
 

@@ -11,10 +11,14 @@ import (
 	"os"
 )
 
+var (
+	cfgFile string
+)
+
+
 //Get New Kubenx Command
 func NewKubenxCommand(out, err io.Writer) *cobra.Command {
 	cobra.OnInitialize(initConfig)
-
 	rootCmd := &cobra.Command{
 		Use:   "kubenx",
 		Short: "A brief description of your application",
@@ -32,7 +36,7 @@ You can find more information in https://github.com/GwonsooLee/kubenx`,
 		},
 	}
 
-	// Group by commands
+	//Group by commands
 	groups := templates.CommandGroups{
 		{
 			Message: "Get Information of kubernetes cluster",
@@ -44,40 +48,17 @@ You can find more information in https://github.com/GwonsooLee/kubenx`,
 
 	groups.Add(rootCmd)
 
+	//rootCmd.AddCommand(NewCmdGet())
 	rootCmd.AddCommand(NewCmdPortForward())
 	rootCmd.AddCommand(NewCmdNamespace())
 	rootCmd.AddCommand(NewCmdGetCluster())
 	rootCmd.AddCommand(NewCmdCompletion())
 	rootCmd.AddCommand(NewCmdContext())
 
-	templates.ActsAsRootCommand(rootCmd, nil, groups...)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kubenx.yaml)")
-	rootCmd.PersistentFlags().StringP("region", "r", "ap-northeast-2", "AWS region for service")
-	rootCmd.PersistentFlags().StringP("cluster", "c", "", "Name of EKS Cluster")
-	rootCmd.PersistentFlags().StringP("namespace", "n", "", "Get Current Namespace")
-	rootCmd.PersistentFlags().StringP("securitygroup", "s", "", "Name of Security Group")
-	rootCmd.PersistentFlags().BoolP("all", "A", false, "All Namespace")
-
-	// Viper Binding
-	viper.BindPFlag("region", rootCmd.PersistentFlags().Lookup("region"))
-	viper.BindPFlag("cluster", rootCmd.PersistentFlags().Lookup("cluster"))
-	viper.BindPFlag("securitygroup", rootCmd.PersistentFlags().Lookup("securitygroup"))
-	viper.BindPFlag("namespace", rootCmd.PersistentFlags().Lookup("namespace"))
-	viper.BindPFlag("all", rootCmd.PersistentFlags().Lookup("all"))
-
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	//templates.ActsAsRootCommand(rootCmd, nil, groups...)
 
 	return rootCmd
 }
-
-
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {

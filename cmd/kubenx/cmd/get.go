@@ -28,6 +28,7 @@ func NewCmdGet() *cobra.Command {
 		WithLongDescription("Get command for retrieve inforamtion").
 		SetAliases([]string{"ge"}).
 		AddGetGroups().
+		SetFlags().
 		RunWithNoArgs(execGet)
 }
 
