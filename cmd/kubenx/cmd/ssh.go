@@ -113,7 +113,7 @@ func (c *SSHClient) Terminal(config *TerminalConfig) *remoteShell {
 
 // Start start a remote shell on client
 func (rs *remoteShell) Start(hostname string) error {
-	blue("Getting new session...")
+	Blue("Getting new session...")
 	session, err := rs.client.NewSession()
 	if err != nil {
 		return err
@@ -174,7 +174,7 @@ func (rs *remoteShell) Start(hostname string) error {
 		return err
 	}
 
-	yellow("Connection to " + hostname + " closed.")
+	Yellow("Connection to " + hostname + " closed.")
 
 	return nil
 }
@@ -240,7 +240,7 @@ func _get_target_instance_configuration() (string, string) {
 	//for _, network := range serverList[0].NetworkInterfaces[0].PrivateIpAddresses {
 	//	if *network.Primary == true {
 	//
-	//		blue(network)
+	//		Blue(network)
 	//		server = *network.PrivateDnsName
 	//		break
 	//	}
@@ -329,7 +329,7 @@ func _dial_with_keypair(sshConfig *SSHConfig, targetHost, targetPort string) (*S
 // Dial starts a client connection to the given SSH server.
 // This is wrap the ssh.Dial
 func _dial(network, addr, targetAddr string, config *ssh.ClientConfig) (*SSHClient, error) {
-	blue("Get Bastion Client Connection to " + addr)
+	Blue("Get Bastion Client Connection to " + addr)
 	client, err := ssh.Dial(network, addr, config)
 	if err != nil {
 		Red(err)
@@ -337,7 +337,7 @@ func _dial(network, addr, targetAddr string, config *ssh.ClientConfig) (*SSHClie
 	}
 
 	//// Remote Connection Through
-	blue("Get Remote Connection to " + targetAddr)
+	Blue("Get Remote Connection to " + targetAddr)
 	remoteConn, err := client.Dial("tcp", targetAddr)
 	if err != nil {
 		Red(err)

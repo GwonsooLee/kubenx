@@ -50,16 +50,16 @@ func _search_by_label()  {
 	namespace := _get_namespace()
 
 	labelSelector := _make_label_selector()
-	blue(fmt.Sprintf("Search Selector : %s", labelSelector))
+	Blue(fmt.Sprintf("Search Selector : %s", labelSelector))
 	fmt.Println()
 
 	//Print pod
-	yellow("========Node INFO=======")
+	Yellow("========Node INFO=======")
 	nodes := _get_all_raw_node(clientset, labelSelector)
 	_render_node_list_info(nodes)
 
 	//Print pod
-	yellow("========POD INFO=======")
+	Yellow("========POD INFO=======")
 	pods := _get_all_raw_pods(clientset, namespace, labelSelector)
 	_render_pod_list_info(pods)
 

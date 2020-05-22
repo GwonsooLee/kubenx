@@ -43,17 +43,6 @@ func _int32_to_string(num int32) string {
 	return strconv.FormatInt(int64(num), 10)
 }
 
-//Convert string to Int64
-func _string_to_int64(s string) int64 {
-	n, err := strconv.ParseInt(s, 10, 64)
-	if err == nil {
-		Red(err)
-		os.Exit(1)
-	}
-
-	return n
-}
-
 //Convert int to string
 func _string_to_int(s string) int {
 	n, err := strconv.Atoi(s)

@@ -49,10 +49,10 @@ func init() {
 func _cluster_initalization(cluster_name string) {
 	// Print the description for initialization
 	Red("******* Steps for initialization ********")
-	yellow("Step 1. Tag setup for VPC")
-	yellow("Step 2. Tag setup for public subnet")
-	yellow("Step 3. Tag setup for private subnet")
-	yellow("Step 4. Create Open ID Connector")
+	Yellow("Step 1. Tag setup for VPC")
+	Yellow("Step 2. Tag setup for public subnet")
+	Yellow("Step 3. Tag setup for private subnet")
+	Yellow("Step 4. Create Open ID Connector")
 	fmt.Println()
 
 	// Get Cluster Information First
@@ -93,7 +93,7 @@ func _cluster_initalization(cluster_name string) {
 
 	// Check the vpc tag is updated
 	if hasVPCTag {
-		blue("Step 1. VPC Tag is already updated")
+		Blue("Step 1. VPC Tag is already updated")
 	} else {
 		Red("Step 1. VPC Tag needs to be updated")
 		_update_vpc_tag_for_cluster(ec2_svc, vpcId, cluster)
@@ -155,7 +155,7 @@ func _cluster_initalization(cluster_name string) {
 		Red("Step 2. Tags for Public Subnet needs to be updated")
 		_update_subnets_tag_for_cluster(ec2_svc, publicSubnetIds, cluster, "public")
 	} else {
-		blue("Step 2. Tags for Public Subnet is already updated")
+		Blue("Step 2. Tags for Public Subnet is already updated")
 	}
 
 	// Add Tag if there is private subnet which doesn't have the necessary tags
@@ -163,14 +163,14 @@ func _cluster_initalization(cluster_name string) {
 		Red("Step 3. Tags for Private Subnet needs to be updated")
 		_update_subnets_tag_for_cluster(ec2_svc, privateSubnetIds, cluster, "private")
 	} else {
-		blue("Step 3. Tags for Private Subnet is already updated")
+		Blue("Step 3. Tags for Private Subnet is already updated")
 	}
 
 	// 5. OpenID Connector Check
 	ret, err := _create_openID_connector(iam_svc, clusterInfo.Cluster.Identity.Oidc.Issuer)
 
 	if ret == ALREADY_EXISTS {
-		blue("Step 4. OIDC Provider already exists")
+		Blue("Step 4. OIDC Provider already exists")
 	} else if ret == NEWLY_CREATED {
 		Red("Step 4. New OIDC Provider is successfully created")
 	} else {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"github.com/GwonsooLee/kubenx/cmd/kubenx/cmd"
+	//"kubenx/cmd/kubenx/cmd"
 )
 
 func Run(out, stderr io.Writer) error {

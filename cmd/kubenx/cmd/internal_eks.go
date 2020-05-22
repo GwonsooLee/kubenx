@@ -55,7 +55,7 @@ func _choose_cluster() string {
 
 		//Exception if there is no cluster in the account
 		if len(options) == 0 {
-			yellow("You have no cluster in the account. Please check the account.")
+			Yellow("You have no cluster in the account. Please check the account.")
 			os.Exit(0)
 		}
 		prompt := &survey.Select{
@@ -119,7 +119,7 @@ func _choose_nodegroup(cluster string) string {
 
 		//Exception if there is no nodegroup in the cluster
 		if len(options) == 0 {
-			yellow("You have no nodegroup in the cluster. Please check the cluster.")
+			Yellow("You have no nodegroup in the cluster. Please check the cluster.")
 			os.Exit(0)
 		}
 

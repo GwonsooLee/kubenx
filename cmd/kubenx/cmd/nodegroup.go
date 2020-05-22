@@ -36,6 +36,3 @@ var ngCmd = &cobra.Command{
 	Aliases: []string{"ng"},
 }
 
-func init() {
-	getCmd.AddCommand(ngCmd)
-}

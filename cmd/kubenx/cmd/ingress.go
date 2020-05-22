@@ -36,6 +36,3 @@ var getIngressCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	getCmd.AddCommand(getIngressCmd)
-}

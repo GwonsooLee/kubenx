@@ -1,18 +1,20 @@
 package cmd
 
 import (
-	"fmt"
-	"io"
-	"os"
 	"context"
+	"fmt"
 	"github.com/mitchellh/go-homedir"
-	"github.com/spf13/viper"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"io"
 	"k8s.io/kubectl/pkg/util/templates"
+	"os"
 )
 
 //Get New Kubenx Command
 func NewKubenxCommand(out, err io.Writer) *cobra.Command {
+	cobra.OnInitialize(initConfig)
+
 	rootCmd := &cobra.Command{
 		Use:   "kubenx",
 		Short: "A brief description of your application",
@@ -42,7 +44,9 @@ You can find more information in https://github.com/GwonsooLee/kubenx`,
 
 	groups.Add(rootCmd)
 
-	cobra.OnInitialize(initConfig)
+	rootCmd.AddCommand(NewCmdPortForward())
+
+	templates.ActsAsRootCommand(rootCmd, nil, groups...)
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
@@ -70,6 +74,7 @@ You can find more information in https://github.com/GwonsooLee/kubenx`,
 }
 
 
+
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	if cfgFile != "" {
@@ -95,7 +100,6 @@ func initConfig() {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }
-
 
 func alwaysSucceedWhenCancelled(ctx context.Context, err error) error {
 	// if the context was cancelled act as if all is well

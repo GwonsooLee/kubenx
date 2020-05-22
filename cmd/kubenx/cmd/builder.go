@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"context"
 	"github.com/spf13/cobra"
@@ -11,8 +10,9 @@ type Builder interface {
 	WithDescription(description string) Builder
 	WithLongDescription(description string) Builder
 	SetAliases(alias []string) Builder
-	RunWithNoArgs(action func(context.Context, io.Writer) error) *cobra.Command
 	AddCommand(cmd *cobra.Command) Builder
+	AddGetGroups() Builder
+	RunWithNoArgs(action func(context.Context, io.Writer) error) *cobra.Command
 }
 
 type builder struct {
@@ -48,10 +48,6 @@ func (b builder) SetAliases(alias []string) Builder {
 
 //Run command without Argument
 func (b builder) RunWithNoArgs(function func(context.Context, io.Writer) error) *cobra.Command {
-	if function == nil {
-		b.cmd.Help()
-		return &b.cmd
-	}
 	b.cmd.Args = cobra.NoArgs
 	b.cmd.RunE = func(*cobra.Command, []string) error {
 		return returnErrorFromFunction(function(b.cmd.Context(), b.cmd.OutOrStderr()))
@@ -66,8 +62,15 @@ func (b builder) AddCommand(child *cobra.Command) Builder {
 	return b
 }
 
+// Add groups of commands for get command
+func (b builder) AddGetGroups() Builder {
+	b.cmd.AddCommand(NewCmdGetPod())
+	b.cmd.AddCommand(NewCmdGetService())
+	b.cmd.AddCommand(NewCmdGetDeployment())
+	return b
+}
+
 // Handle Error from real function
 func returnErrorFromFunction(err error) error {
-	fmt.Println(err.Error())
 	return err
 }

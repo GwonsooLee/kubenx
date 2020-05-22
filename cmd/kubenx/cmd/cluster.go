@@ -41,10 +41,6 @@ var clusterCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	getCmd.AddCommand(clusterCmd)
-}
-
 // Get detail information about cluster
 func _get_detail_info_of_cluster() {
 	svc := _get_eks_session()

@@ -1,22 +1,20 @@
 package cmd
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
-	"syscall"
 	"time"
-	"context"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
 	v1beta1 "k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
@@ -24,7 +22,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
-	"k8s.io/apimachinery/pkg/util/duration"
 
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
@@ -261,7 +258,7 @@ func _change_current_namespace(target string) {
 		// If the target is not in the context
 		if ! containsTarget {
 			Red("[ "+target+ " ] namespace doesn't exist. Please check the namespaces")
-			yellow(namespaceList)
+			Yellow(namespaceList)
 			os.Exit(1)
 		}
 
@@ -273,7 +270,7 @@ func _change_current_namespace(target string) {
 	configAccess := clientcmd.NewDefaultClientConfig(*configs, configOverrides).ConfigAccess()
 
 	clientcmd.ModifyConfig(configAccess, currentConfig, false)
-	yellow("Namespace is changed to \"" + newNamespace + "\"")
+	Yellow("Namespace is changed to \"" + newNamespace + "\"")
 }
 
 // Change current Context
@@ -330,37 +327,7 @@ func _change_current_context() {
 	configAccess := clientcmd.NewDefaultClientConfig(*configs, configOverrides).ConfigAccess()
 
 	clientcmd.ModifyConfig(configAccess, currentConfig, false)
-	yellow("Context is changed to \"" + newContext + "\"")
-}
-
-// Get all name list of pod in current namespace
-func _get_pod_names_only(config *rest.Config) []string {
-	// If no configuration is sent then get configuration manually
-	if config == nil {
-		config = _get_configuration()
-	}
-
-	//Get kubernetes Client
-	clientset := _get_k8s_client_with_configuration(config)
-
-	//Get namespace
-	namespace := _get_namespace()
-
-	//Get All Pods
-	pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	// Retrieve only strings from the list
-	var podNames []string
-	for _, pod := range pods.Items {
-		objectMeta := pod.ObjectMeta
-		podNames = append(podNames, objectMeta.Name)
-	}
-
-	return podNames
+	Yellow("Context is changed to \"" + newContext + "\"")
 }
 
 // Get ingress List
@@ -557,19 +524,6 @@ func _get_all_raw_node(clientset *kubernetes.Clientset, labelSelector string) []
 }
 
 
-// Get All pod list
-func _get_pod_list() {
-	//Get kubernetes Client
-	clientset := _get_k8s_client()
-
-	//Get namespace
-	namespace := _get_namespace()
-
-	//Get All Pods
-	pods := _get_all_raw_pods(clientset, namespace, NO_STRING)
-
-	_render_pod_list_info(pods)
-}
 
 //Get All node list
 func _get_node_list() {
@@ -712,10 +666,9 @@ func _get_service_list() {
 }
 
 // Select Pod and port before port forward
-func _select_pod_port_ns(config *rest.Config) (string, int, int, string) {
+func selectPodPortNS(options []string) (string, int, int) {
 	// Choose Pod from the list
 	var pod, local_port, pod_port string
-	options := _get_pod_names_only(config)
 
 	// Choose Pod from the list
 	prompt := &survey.Select{
@@ -752,79 +705,7 @@ func _select_pod_port_ns(config *rest.Config) (string, int, int, string) {
 		os.Exit(1)
 	}
 
-	namespace := _get_namespace()
-
-	return pod, _string_to_int(local_port), _string_to_int(pod_port), namespace
-}
-
-// Start Session for port forwarding
-func _start_port_forwarding() {
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-
-	//Get Configuration
-	config := _get_configuration()
-
-	//Get Parameters from input
-	pod, local_port, pod_port, namespace := _select_pod_port_ns(config)
-
-	// stopCh control the port forwarding lifecycle. When it gets closed the
-	// port forward will terminate
-	stopCh := make(chan struct{}, 1)
-	// readyCh communicate when the port forward is ready to get traffic
-	readyCh := make(chan struct{})
-	// stream is used to tell the port forwarder where to place its output or
-	// where to expect input if needed. For the port forwarding we just need
-	// the output eventually
-	stream := genericclioptions.IOStreams{
-		In:     os.Stdin,
-		Out:    os.Stdout,
-		ErrOut: os.Stderr,
-	}
-
-	// managing termination signal from the terminal. As you can see the stopCh
-	// gets closed to gracefully handle its termination.
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigs
-		fmt.Println("Finishing port forwarding")
-		close(stopCh)
-		wg.Done()
-	}()
-
-	go func() {
-		// PortForward the pod specified from its port 9090 to the local port
-		// 8080
-		err := _port_forward_to_pod(PortForwardAPodRequest{
-			RestConfig: config,
-			Pod: corev1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      pod,
-					Namespace: namespace,
-				},
-			},
-			//LocalPort: _string_to_int(port),
-			//PodPort:   _string_to_int(port),
-			LocalPort: local_port,
-			PodPort:   pod_port,
-			Streams:   stream,
-			StopCh:    stopCh,
-			ReadyCh:   readyCh,
-		})
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	select {
-	case <-readyCh:
-		break
-	}
-	println("Port forwarding is ready to get traffic. have fun!")
-
-	wg.Wait()
+	return pod, _string_to_int(local_port), _string_to_int(pod_port)
 }
 
 // Get PortForward Dialer
@@ -892,10 +773,10 @@ func _inspect_node(args []string)  {
 
 	taints := detail.Spec.Taints
 
-	yellow("========Taint INFO=======")
+	Yellow("========Taint INFO=======")
 	for _, taint := range taints {
 		txt := fmt.Sprintf("%s=%s:%s", taint.Key, taint.Value, taint.Effect)
-		blue(txt)
+		Blue(txt)
 	}
 
 	if len(taints) == 0 {
@@ -913,7 +794,7 @@ func _inspect_node(args []string)  {
 	}
 
 	fmt.Println()
-	yellow("========POD INFO=======")
+	Yellow("========POD INFO=======")
 	_render_pod_list_info(filtered)
 }
 

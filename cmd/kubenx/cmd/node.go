@@ -47,9 +47,3 @@ var inspectNodeCmd = &cobra.Command{
 	},
 	Aliases: []string{"nodes"},
 }
-
-func init() {
-	getCmd.AddCommand(getNodeCmd)
-	inspectCmd.AddCommand(inspectNodeCmd)
-}
-

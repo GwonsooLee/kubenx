@@ -16,17 +16,22 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"github.com/spf13/cobra"
+	"io"
 )
 
 //Get new get function
 func NewCmdGet() *cobra.Command {
-	usage := "get"
-	return NewCmd(usage).
-			WithDescription("Get kubernetes information").
-			WithLongDescription("Get command for retrieve inforamtion").
-			SetAliases([]string{"ge"}).
-			AddCommand(NewCmdGetPod()).
-			RunWithNoArgs(nil)
+	return NewCmd("get").
+		WithDescription("Get kubernetes information").
+		WithLongDescription("Get command for retrieve inforamtion").
+		SetAliases([]string{"ge"}).
+		AddGetGroups().
+		RunWithNoArgs(execGet)
+}
+
+func execGet(_ context.Context, out io.Writer) error {
+	return nil
 }
 

@@ -13,11 +13,11 @@ type Color struct {
 
 var (
 	//Color Definition
-	Red    = color.New(color.FgRed)
-	Blue   = color.New(color.FgBlue)
-	Green  = color.New(color.FgGreen)
-	Yellow = color.New(color.FgYellow)
-	Cyan   = color.New(color.FgCyan)
+	Red    = Color{color: color.New(color.FgRed) }
+	Blue   = Color{color: color.New(color.FgBlue)}
+	Green  = Color{color: color.New(color.FgGreen)}
+	Yellow = Color{color: color.New(color.FgYellow)}
+	Cyan   = Color{color: color.New(color.FgCyan)}
 )
 
 // Fprintln outputs the result to out, followed by a newline.
@@ -28,4 +28,14 @@ func (c Color) Fprintln(out io.Writer, a ...interface{}) {
 	}
 
 	fmt.Fprintln(out, c.color.Sprint(strings.TrimSuffix(fmt.Sprintln(a...), "\n")))
+}
+
+// Fprintf outputs the result to out.
+func (c Color) Fprintf(out io.Writer, format string, a ...interface{}) {
+	if c.color == nil {
+		fmt.Fprintf(out, format, a...)
+		return
+	}
+
+	fmt.Fprint(out, c.color.Sprintf(format, a...))
 }
