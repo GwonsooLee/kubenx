@@ -28,6 +28,3 @@ var inspectCmd = &cobra.Command{
 	Aliases: []string{"ins"},
 }
 
-func init() {
-	rootCmd.AddCommand(inspectCmd)
-}

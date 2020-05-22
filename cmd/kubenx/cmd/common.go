@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"os"
 	"strconv"
 	"github.com/AlecAivazis/survey/v2"
@@ -9,8 +10,27 @@ import (
 )
 
 var (
+	ALL_NAMESPACE=""
 	NO_STRING=""
 	DEFAULT_NODE_LABEL_FILTERS=[]string{"app", "env"}
+	//STATIS VALUE
+	KUBENX_HOMEDIR = ".kubenx"
+	SSH_DEFAULT_PATH = "ssh"
+	TARGET_DEFAULT_PORT = "22"
+
+
+	//Color Definition
+	Red    = color.New(color.FgRed).PrintlnFunc()
+	Blue   = color.New(color.FgBlue).PrintlnFunc()
+	Green  = color.New(color.FgGreen).PrintlnFunc()
+	Yellow = color.New(color.FgYellow).PrintlnFunc()
+	Cyan   = color.New(color.FgCyan).PrintlnFunc()
+
+	//OPEN_ID_CA_FINGERPRINT
+	CA_FINGERPRINT = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
+
+	//Error Message
+	NO_FILE_EXCEPTION = "No file exists... Please check the file path"
 )
 
 // Get Home Directory
@@ -19,6 +39,17 @@ func homeDir() string {
 		return h
 	}
 	return os.Getenv("USERPROFILE") // windows
+}
+
+//Figure out if string is in array
+func isStringInArr(s string, arr []string) bool {
+	for _, a := range arr {
+		if a == s {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Get Table
@@ -54,7 +85,7 @@ func _string_to_int(s string) int {
 }
 
 //Get only one input from user
-func _get_single_string_input(message string, error_msg string) string {
+func getSingleStringInput(message string) (string, error) {
 	var ret string
 	prompt := &survey.Input{
 		Message: fmt.Sprintf("%s:", message),
@@ -62,9 +93,8 @@ func _get_single_string_input(message string, error_msg string) string {
 	survey.AskOne(prompt, &ret)
 
 	if ret == "" {
-		Red(error_msg)
-		os.Exit(1)
+		return NO_STRING, fmt.Errorf("Choice has been canceled")
 	}
 
-	return ret
+	return ret, nil
 }

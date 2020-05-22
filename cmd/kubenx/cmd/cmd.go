@@ -42,6 +42,7 @@ You can find more information in https://github.com/GwonsooLee/kubenx`,
 			Message: "Get Information of kubernetes cluster",
 			Commands: []*cobra.Command{
 				NewCmdGet(),
+				NewCmdSearch(),
 			},
 		},
 	}

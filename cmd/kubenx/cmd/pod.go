@@ -18,20 +18,16 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 	"github.com/spf13/cobra"
 	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/GwonsooLee/kubenx/pkg/color"
-	"github.com/GwonsooLee/kubenx/pkg/table"
-	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"syscall"
-	"time"
 )
 
 //Create Command for get pod
@@ -39,7 +35,6 @@ func NewCmdGetPod() *cobra.Command {
 	return NewCmd("pod").
 		WithDescription("Get pod list").
 		SetAliases([]string{"po", "pods"}).
-		SetFlags().
 		RunWithNoArgs(execGetPod)
 }
 
@@ -54,59 +49,18 @@ func NewCmdPortForward() *cobra.Command {
 // Function for get command
 func execGetPod(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
-		opts := metav1.ListOptions{}
 
 		// Get All Pods in current namespace
-		pods, err := executor.Client.CoreV1().Pods(executor.Namespace).List(ctx, opts)
+		pods, err := getAllRawPods(executor.Client, executor.Namespace, NO_STRING)
 		if err != nil {
 			color.Red.Fprintln(out, err)
 			os.Exit(1)
 		}
 
-		if len(pods.Items) <= 0 {
+		if ! renderPodListInfo(pods) {
 			color.Red.Fprintln(out, "No pod exists in the namespace")
-			return nil
 		}
 
-		// Table setup
-		table := table.GetTableObject()
-		table.SetHeader([]string{"Name", "READY", "STATUS", "HOSTNAME", "POD IP", "HOST IP", "NODE", "AGE"})
-
-		now := time.Now()
-		for _, pod := range pods.Items {
-			objectMeta := pod.ObjectMeta
-			podStatus := pod.Status
-			podSpec := pod.Spec
-			duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
-
-			readyCount := 0
-			totalCount := 0
-			var status string
-
-			status = fmt.Sprintf("%v", podStatus.Phase)
-			for _, containerStatus := range podStatus.ContainerStatuses {
-				totalCount += 1
-				if containerStatus.Ready {
-					readyCount += 1
-				}
-
-				if containerStatus.State.Waiting != nil {
-					status = containerStatus.State.Waiting.Reason
-					break
-				}
-
-				if containerStatus.State.Running != nil {
-					status = "Running"
-				}
-
-				if containerStatus.State.Terminated != nil {
-					status = fmt.Sprintf("%s (Exit Code: %d)", containerStatus.State.Terminated.Reason, containerStatus.State.Terminated.ExitCode)
-				}
-			}
-
-			table.Append([]string{objectMeta.Name, strconv.Itoa(readyCount) + "/" + strconv.Itoa(totalCount), status, podSpec.Hostname, podStatus.PodIP, podStatus.HostIP, podSpec.NodeName, duration})
-		}
-		table.Render()
 		return nil
 	})
 }

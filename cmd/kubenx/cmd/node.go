@@ -16,9 +16,44 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"os"
+	"io"
+	"context"
+	"github.com/spf13/cobra"
+	"github.com/GwonsooLee/kubenx/pkg/color"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+
+//Create Command for get pod
+func NewCmdGetNode() *cobra.Command {
+	return NewCmd("node").
+		WithDescription("Get node list").
+		SetAliases([]string{"nodes"}).
+		RunWithNoArgs(execGetNode)
+}
+
+
+// Function for get command
+func execGetNode(ctx context.Context, out io.Writer) error {
+	return runExecutor(ctx, func(executor Executor) error {
+		listOpt := metav1.ListOptions{}
+		nodes, err := executor.Client.CoreV1().Nodes().List(context.Background(), listOpt)
+		if err != nil {
+			color.Red.Fprintln(out, err)
+			os.Exit(1)
+		}
+
+		if len(nodes.Items) <= 0 {
+			color.Red.Fprintln(out, "No node exists in the namespace")
+			return nil
+		}
+
+
+		renderNodeListInfo(nodes.Items)
+		return err
+	})
+}
 
 // nodeCmd represents the node command
 var getNodeCmd = &cobra.Command{

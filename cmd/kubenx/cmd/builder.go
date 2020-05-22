@@ -12,6 +12,7 @@ type Builder interface {
 	SetAliases(alias []string) Builder
 	AddCommand(cmd *cobra.Command) Builder
 	AddGetGroups() Builder
+	AddSearchGroups() Builder
 	SetFlags() Builder
 	RunWithNoArgs(action func(context.Context, io.Writer) error) *cobra.Command
 	RunWithArgs(action func(context.Context, io.Writer, []string) error) *cobra.Command
@@ -92,6 +93,13 @@ func (b builder) AddGetGroups() Builder {
 	b.cmd.AddCommand(NewCmdGetDeployment())
 	b.cmd.AddCommand(NewCmdGetCluster())
 	b.cmd.AddCommand(NewCmdGetIngress())
+	b.cmd.AddCommand(NewCmdGetNode())
+	return b
+}
+
+// Add groups of commands for search command
+func (b builder) AddSearchGroups() Builder {
+	b.cmd.AddCommand(NewCmdSearchLabel())
 	return b
 }
 

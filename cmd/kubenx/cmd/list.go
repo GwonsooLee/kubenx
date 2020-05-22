@@ -63,7 +63,6 @@ func init() {
 	//Bind Flag to viper
 	viper.BindPFlag("cluster", listCmd.Flags().Lookup("cluster"))
 
-	rootCmd.AddCommand(listCmd)
 }
 
 // List Clusters

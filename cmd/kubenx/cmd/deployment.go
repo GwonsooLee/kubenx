@@ -20,6 +20,7 @@ import (
 	"time"
 	"context"
 	"github.com/spf13/cobra"
+	"github.com/GwonsooLee/kubenx/pkg/table"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"github.com/GwonsooLee/kubenx/pkg/color"
@@ -48,7 +49,7 @@ func execGetDeployment(ctx context.Context, out io.Writer) error {
 		errorCount := 0
 
 		//Tables to show information
-		table := _get_table_object()
+		table := table.GetTableObject()
 		table.SetHeader([]string{"Name", "READY", "UP-TO-DATE", "AVAILABLE", "STRATEGY TYPE", "MAX UNAVAILABLE", "NAX SURGE", "CONTAINERS", "IMAGE", "AGE"})
 
 		// Search Deployment with v1beta1

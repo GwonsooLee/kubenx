@@ -111,9 +111,6 @@ func getConfigFromFlag() (*rest.Config, error) {
 	return config, nil
 }
 
-
-
-
 // Get current namespace
 func _get_namespace() string {
 	//Check all Namespace
@@ -461,7 +458,7 @@ func _get_deployment_list() {
 }
 
 // Get All Raw Pod list
-func _get_all_raw_pods(clientset *kubernetes.Clientset, namespace string, labelSelector string) []corev1.Pod {
+func getAllRawPods(clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Pod, error) {
 	listOpt := metav1.ListOptions{}
 	if len(labelSelector) > 0 {
 		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
@@ -469,11 +466,10 @@ func _get_all_raw_pods(clientset *kubernetes.Clientset, namespace string, labelS
 
 	pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), listOpt)
 	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
+		return nil, err
 	}
 
-	return pods.Items
+	return pods.Items, nil
 }
 
 //Get All raw node list
@@ -500,7 +496,7 @@ func _get_node_list() {
 	clientset := _get_k8s_client()
 
 	nodes := _get_all_raw_node(clientset, NO_STRING)
-	_render_node_list_info(nodes)
+	renderNodeListInfo(nodes)
 }
 
 //Retrive only node List for ssh
@@ -753,7 +749,7 @@ func _inspect_node(args []string)  {
 	}
 
 	//Get all pods
-	pods := _get_all_raw_pods(clientset, namespace, NO_STRING)
+	pods, _:= getAllRawPods(clientset, namespace, NO_STRING)
 
 	filtered := []corev1.Pod{}
 	for _, pod := range pods {
@@ -764,14 +760,13 @@ func _inspect_node(args []string)  {
 
 	fmt.Println()
 	Yellow("========POD INFO=======")
-	_render_pod_list_info(filtered)
+	renderPodListInfo(filtered)
 }
 
 // Render Pod list
-func _render_pod_list_info(pods []corev1.Pod)  {
+func renderPodListInfo(pods []corev1.Pod) bool {
 	if len(pods) <= 0 {
-		Red("No pod exists in the namespace")
-		return
+		return false
 	}
 	// Table setup
 	table := _get_table_object()
@@ -812,14 +807,15 @@ func _render_pod_list_info(pods []corev1.Pod)  {
 		table.Append([]string{objectMeta.Name, strconv.Itoa(readyCount) + "/" + strconv.Itoa(totalCount), status, podSpec.Hostname, podStatus.PodIP, podStatus.HostIP, podSpec.NodeName, duration})
 	}
 	table.Render()
+
+	return true
 }
 
 
 // Render Pod list
-func _render_node_list_info(nodes []corev1.Node)  {
+func renderNodeListInfo(nodes []corev1.Node) bool {
 	if len(nodes) <= 0 {
-		Red("No node exists in the namespace")
-		return
+		return false
 	}
 	//Variable for all pods
 	var objectMeta metav1.ObjectMeta
@@ -865,11 +861,7 @@ func _render_node_list_info(nodes []corev1.Node)  {
 		table.Append([]string{objectMeta.Name, status, internalIp, externalIp, strings.Join(labels,","), nodeStatus.NodeInfo.OSImage, duration})
 	}
 	table.Render()
+
+	return true
 }
 
-func _make_label_selector() string {
-	key := _get_single_string_input("Key", "Input for key has been cancelled")
-	value := _get_single_string_input("Value", "Input for value has been cancelled")
-
-	return fmt.Sprintf("%s=%s", key, value)
-}

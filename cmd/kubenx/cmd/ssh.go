@@ -51,10 +51,6 @@ var sshCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	rootCmd.AddCommand(sshCmd)
-}
-
 // SSH Client Configuration
 type SSHClient struct {
 	client *ssh.Client
