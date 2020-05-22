@@ -1,31 +1,32 @@
 package cmd
 
 import (
-	"context"
-	"flag"
+	"k8s.io/client-go/tools/clientcmd/api"
+	"os"
 	"fmt"
+	"time"
+	"flag"
+	"context"
 	"net/http"
 	"net/url"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
+	"path/filepath"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/duration"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
-	v1beta1 "k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
 	"k8s.io/client-go/rest"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/transport/spdy"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/portforward"
-	"k8s.io/client-go/transport/spdy"
+	"k8s.io/apimachinery/pkg/util/duration"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/spf13/viper"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
-	"github.com/spf13/viper"
+	v1beta1 "k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
 )
 
 //Port Forward Request
@@ -45,6 +46,51 @@ type PortForwardAPodRequest struct {
 	// ReadyCh communicates when the tunnel is ready to receive traffic
 	ReadyCh chan struct{}
 }
+
+// Get Current Cluster
+func GetCurrentCluster() (string, error) {
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	configOverrides := &clientcmd.ConfigOverrides{}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+	rawConfig, err := clientcmd.ClientConfig.RawConfig(kubeConfig)
+	if err != nil {
+		return NO_STRING, err
+	}
+
+	return rawConfig.CurrentContext, nil
+}
+
+// Get api configuration
+func getAPIConfig() (*api.Config, *string, error)  {
+	var kubeconfig *string
+	if home := homeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	configs, err := clientcmd.LoadFromFile(*kubeconfig)
+	if err != nil {
+		return nil, kubeconfig, err
+	}
+
+	return configs, kubeconfig, nil
+}
+
+//Get current configuration
+func getCurrentConfig() (*api.Config, error) {
+	configOverrides := &clientcmd.ConfigOverrides{}
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+	currentConfig, err := kubeConfig.RawConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return &currentConfig, nil
+}
+
 
 // Get current namespace
 func _get_namespace() string {
@@ -172,105 +218,6 @@ func _get_configuration() *rest.Config {
 	}
 
 	return config
-}
-
-// Change current Namespace
-func _change_current_namespace(target string) {
-	var kubeconfig *string
-	var namespaceList []string
-	if home := homeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-
-	configs, err := clientcmd.LoadFromFile(*kubeconfig)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	// Get Client Configuration
-	configOverrides := &clientcmd.ConfigOverrides{}
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	currentConfig, err := kubeConfig.RawConfig()
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	// create the clientset
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	// Get All Namespace in current context
-	namespaces, err := clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	for _, obj := range namespaces.Items {
-		namespaceList = append(namespaceList, obj.ObjectMeta.Name)
-	}
-
-	newNamespace := ""
-	if len(target) == 0 {
-		//getting current Context
-		currentContext := currentConfig.CurrentContext
-		currentNamespace := currentConfig.Contexts[currentConfig.CurrentContext].Namespace
-
-		// Get New Context
-		Red("[ " + currentContext + " ] Current Namespace: " + currentNamespace)
-		prompt := &survey.Select{
-			Message: "Choose Context:",
-			Options: namespaceList,
-		}
-		survey.AskOne(prompt, &newNamespace)
-
-		if newNamespace == "" {
-			Red("Changing Namespace has been canceled")
-			os.Exit(1)
-		}
-
-	} else {
-		// Check whether the target exists in current context
-		containsTarget := false
-		for _, namespace := range namespaceList {
-			if target == namespace {
-				containsTarget = true
-				break
-			}
-		}
-
-		// If the target is not in the context
-		if ! containsTarget {
-			Red("[ "+target+ " ] namespace doesn't exist. Please check the namespaces")
-			Yellow(namespaceList)
-			os.Exit(1)
-		}
-
-		newNamespace = target
-	}
-
-	//Change To New Namespace
-	currentConfig.Contexts[currentConfig.CurrentContext].Namespace = newNamespace
-	configAccess := clientcmd.NewDefaultClientConfig(*configs, configOverrides).ConfigAccess()
-
-	clientcmd.ModifyConfig(configAccess, currentConfig, false)
-	Yellow("Namespace is changed to \"" + newNamespace + "\"")
 }
 
 // Change current Context

@@ -16,28 +16,117 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
+	"fmt"
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 	"github.com/spf13/cobra"
-	"os"
+	"io"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
-// namespaceCmd represents the namespace command
-var namespaceCmd = &cobra.Command{
-	Use:   "namespace",
-	Short: "Command about namespace",
-	Long:  `Command about namespace`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) > 1 {
-			Red("Too many Arguments")
-			os.Exit(1)
-		} else if len(args) == 1 {
-			_change_current_namespace(args[0])
-		} else {
-			_change_current_namespace("")
-		}
-	},
-	Aliases: []string{"ns"},
+
+
+//Create Command for get pod
+func NewCmdNamespace() *cobra.Command {
+	return NewCmd("namespace").
+		WithDescription("Change namespace").
+		SetAliases([]string{"ns"}).
+		RunWithArgs(execNamespace)
 }
 
-func init() {
-	rootCmd.AddCommand(namespaceCmd)
+// Function for get command
+func execNamespace(ctx context.Context, out io.Writer, args []string) error {
+	return runWithoutExecutor(ctx, func() error {
+		var namespaceList []string
+
+		//Get API configuration
+		configs, kubeconfig, err := getAPIConfig()
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		// Get Client Configuration
+		currentConfig, err := getCurrentConfig()
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		// use the current context in kubeconfig
+		config, err := clientcmd.BuildConfigFromFlags(NO_STRING, *kubeconfig)
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		// create the clientset
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		// Get All Namespace in current context
+		namespaces, err := clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		for _, obj := range namespaces.Items {
+			namespaceList = append(namespaceList, obj.ObjectMeta.Name)
+		}
+
+		newNamespace := ""
+		if len(args) == 0 {
+			//getting current Context
+			currentContext := currentConfig.CurrentContext
+			currentNamespace := currentConfig.Contexts[currentConfig.CurrentContext].Namespace
+
+			// Get New Context
+			Red("[ " + currentContext + " ] Current Namespace: " + currentNamespace)
+			prompt := &survey.Select{
+				Message: "Choose Context:",
+				Options: namespaceList,
+			}
+			survey.AskOne(prompt, &newNamespace)
+
+			if newNamespace == "" {
+				color.Red.Fprintln(out, fmt.Errorf("No namespace is selected..."))
+				return err
+			}
+
+		} else {
+			target := args[0]
+
+			// Check whether the target exists in current context
+			containsTarget := false
+			for _, namespace := range namespaceList {
+				if target == namespace {
+					containsTarget = true
+					break
+				}
+			}
+
+			// If the target is not in the context
+			if ! containsTarget {
+				color.Yellow.Fprintf(out, "[ %s ] namespace doesn't exist. Please check the namespaces.", target)
+				return nil
+			}
+
+			newNamespace = target
+		}
+
+		//Change To New Namespace
+		currentConfig.Contexts[currentConfig.CurrentContext].Namespace = newNamespace
+		configAccess := clientcmd.NewDefaultClientConfig(*configs,  &clientcmd.ConfigOverrides{}).ConfigAccess()
+
+		clientcmd.ModifyConfig(configAccess, *currentConfig, false)
+		color.Yellow.Fprintf(out, "Namespace is changed to %s", newNamespace)
+		return nil
+	})
 }

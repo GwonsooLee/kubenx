@@ -16,11 +16,10 @@ limitations under the License.
 package cmd
 
 import (
-	"bytes"
-	"github.com/spf13/cobra"
 	"io"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"os"
+	"bytes"
+	"context"
+	"github.com/spf13/cobra"
 )
 
 const defaultBoilerPlate = `
@@ -46,29 +45,27 @@ var (
 	}
 )
 
-// completionCmd represents the completion command
-var completionCmd = &cobra.Command{
-	Use:   "completion",
-	Short: "Generates bash completion scripts",
-	Long: `To load completion run
-
+//Create Command for get pod
+func NewCmdCompletion() *cobra.Command {
+	return NewCmd("completion").
+		WithDescription("Generate bash/zsh completion script").
+		WithLongDescription(`To load completion run
 . <(kubenx completion)
 
 To configure your bash shell to load completions for each session add to your bashrc
 
 # ~/.bashrc or ~/.profile
 . <(kubenx completion)
-`,
-	Run: func(cmd *cobra.Command, args []string) {
-		//rootCmd.GenBashCompletion(os.Stdout)
-		ioStreams := genericclioptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr}
-		err := RunCompletion(ioStreams.Out, "", cmd, args)
-		CheckErr(err)
-	},
+`		).
+		RunWithArgsAndCmd(execCompletion)
 }
 
-func init() {
-	rootCmd.AddCommand(completionCmd)
+// Function for get command
+func execCompletion(_ context.Context, out io.Writer, cmd *cobra.Command, args []string) error {
+	err := RunCompletion(out, "", cmd, args)
+	CheckErr(err)
+
+	return err
 }
 
 // RunCompletion checks given arguments and executes command

@@ -1,20 +1,27 @@
 package cmd
 
 import (
-	"k8s.io/client-go/rest"
+	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/iam"
 	"os"
 	"flag"
 	"context"
 	"path/filepath"
+	"k8s.io/client-go/rest"
 	"github.com/spf13/viper"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
+	"github.com/aws/aws-sdk-go/service/eks"
+	"github.com/GwonsooLee/kubenx/pkg/aws"
 )
 type Executor struct {
-	Client *kubernetes.Clientset
-	Config *rest.Config
-	Namespace string
-	Context   context.Context
+	Client 		*kubernetes.Clientset
+	EKS 		*eks.EKS
+	EC2 		*ec2.EC2
+	IAM 		*iam.IAM
+	Config 		*rest.Config
+	Namespace 	string
+	Context   	context.Context
 }
 
 // Run executor for command line
@@ -23,6 +30,24 @@ func runExecutor(ctx context.Context, action func(Executor) error) error {
 	if err != nil {
 		return err
 	}
+
+	//Run function with executor
+	err = action(executor)
+
+	return alwaysSucceedWhenCancelled(ctx, err)
+}
+
+// Run executor for command line
+func runExecutorWithAWS(ctx context.Context, action func(Executor) error) error {
+	executor, err:= createNewExecutor()
+	if err != nil {
+		return err
+	}
+
+	//Set AWS sessions
+	executor.EKS = aws.GetEksSession()
+	executor.EC2 = aws.GetEC2Session()
+	executor.IAM = aws.GetIAMSession()
 
 	//Run function with executor
 	err = action(executor)
@@ -84,4 +109,12 @@ func createNewExecutor() (Executor, error) {
 	executor.Namespace = namespace
 
 	return executor, err
+}
+
+
+// Run function without executor
+func runWithoutExecutor(ctx context.Context, action func() error) error {
+	err := action()
+
+	return alwaysSucceedWhenCancelled(ctx, err)
 }

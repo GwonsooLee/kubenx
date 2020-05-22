@@ -57,18 +57,6 @@ func _get_subnet_list_in_vpc(svc *ec2.EC2, vpcId *string) *ec2.DescribeSubnetsOu
 	return ret
 }
 
-// Describe Single subnet Information
-func _get_subnet_info(svc *ec2.EC2, subnetIds []*string) *ec2.DescribeSubnetsOutput {
-	inputParam := &ec2.DescribeSubnetsInput{SubnetIds: subnetIds}
-	ret, err := svc.DescribeSubnets(inputParam)
-
-	if err != nil {
-		Red(err)
-		os.Exit(1)
-	}
-
-	return ret
-}
 
 // Get Security Group Information
 func _get_security_group_detail(svc *ec2.EC2, groupIds []*string) *ec2.DescribeSecurityGroupsOutput {
@@ -195,26 +183,6 @@ func _get_detail_info_of_nodegroup() {
 	table.Render()
 	fmt.Println()
 	instanceTable.Render()
-}
-
-// Update VPC Tag for cluster
-func _update_vpc_tag_for_cluster(svc *ec2.EC2, vpcId *string, cluster string) {
-	inputParam := &ec2.CreateTagsInput{
-		Resources: []*string{
-			aws.String(*vpcId),
-		},
-		Tags: []*ec2.Tag{
-			{
-				Key:   aws.String("kubernetes.io/cluster/" + cluster),
-				Value: aws.String("shared"),
-			},
-		},
-	}
-	_, err := svc.CreateTags(inputParam)
-	if err != nil {
-		Red(err)
-		os.Exit(1)
-	}
 }
 
 // Update Subnet Tag for cluster

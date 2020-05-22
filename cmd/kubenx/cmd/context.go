@@ -16,29 +16,74 @@ limitations under the License.
 package cmd
 
 import (
+	"io"
+	"fmt"
+	"context"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/tools/clientcmd"
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 )
 
-// contextCmd represents the context command
-var contextCmd = &cobra.Command{
-	Use:   "context",
-	Short: "Command about context",
-	Long:  `Command about context.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		_change_current_context()
-	},
+
+//Create Command for get pod
+func NewCmdContext() *cobra.Command {
+	return NewCmd("context").
+		WithDescription("Change context from kubeconfig").
+		SetAliases([]string{"ctx"}).
+		RunWithArgs(execContext)
 }
 
-func init() {
-	rootCmd.AddCommand(contextCmd)
+// Function for changing context
+func execContext(_ context.Context, out io.Writer, args []string) error {
+	var contextList []string
+	var newContext string
 
-	// Here you will define your flags and configuration settings.
+	//Get API configuration
+	configs, _, err := getAPIConfig()
+	if err != nil {
+		color.Red.Fprintln(out, err.Error())
+		return err
+	}
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// contextCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// Get Client Configuration
+	currentConfig, err := getCurrentConfig()
+	if err != nil {
+		color.Red.Fprintln(out, err.Error())
+		return err
+	}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// contextCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	//getting current Context
+	currentContext := currentConfig.CurrentContext
+
+	if len(args) == 0 {
+		// get list of context
+		for context, _ := range configs.Contexts {
+			contextList = append(contextList, context)
+		}
+
+		// Get New Context
+		color.Red.Fprintln(out, fmt.Sprintf("Current Context: %s", currentContext))
+		prompt := &survey.Select{
+			Message: "Choose Context:",
+			Options: contextList,
+		}
+		survey.AskOne(prompt, &newContext)
+
+		if newContext == "" {
+			color.Red.Fprintln(out, fmt.Errorf("Changing Context has been canceled"))
+			return err
+		}
+	} else {
+		newContext = args[0]
+	}
+
+	//Change To New Context
+	currentConfig.CurrentContext = newContext
+	configAccess := clientcmd.NewDefaultClientConfig(*configs, &clientcmd.ConfigOverrides{}).ConfigAccess()
+
+	clientcmd.ModifyConfig(configAccess, *currentConfig, false)
+	color.Yellow.Fprintln(out, fmt.Sprintf("Context is changed to %s", newContext))
+
+	return nil
 }

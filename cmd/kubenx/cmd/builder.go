@@ -13,6 +13,8 @@ type Builder interface {
 	AddCommand(cmd *cobra.Command) Builder
 	AddGetGroups() Builder
 	RunWithNoArgs(action func(context.Context, io.Writer) error) *cobra.Command
+	RunWithArgs(action func(context.Context, io.Writer, []string) error) *cobra.Command
+	RunWithArgsAndCmd(action func(context.Context, io.Writer, *cobra.Command, []string) error) *cobra.Command
 }
 
 type builder struct {
@@ -55,6 +57,21 @@ func (b builder) RunWithNoArgs(function func(context.Context, io.Writer) error) 
 	return &b.cmd
 }
 
+// Run command with extra arguments
+func (b builder) RunWithArgs(function func(context.Context, io.Writer, []string) error) *cobra.Command {
+	b.cmd.RunE = func(_*cobra.Command, args []string) error {
+		return returnErrorFromFunction(function(b.cmd.Context(), b.cmd.OutOrStderr(), args))
+	}
+	return &b.cmd
+}
+
+// Run command with extra arguments
+func (b builder) RunWithArgsAndCmd(function func(context.Context, io.Writer, *cobra.Command, []string) error) *cobra.Command {
+	b.cmd.RunE = func(_ *cobra.Command, args []string) error {
+		return returnErrorFromFunction(function(b.cmd.Context(), b.cmd.OutOrStderr(), &b.cmd, args))
+	}
+	return &b.cmd
+}
 
 // Set Child of command
 func (b builder) AddCommand(child *cobra.Command) Builder {
@@ -67,6 +84,7 @@ func (b builder) AddGetGroups() Builder {
 	b.cmd.AddCommand(NewCmdGetPod())
 	b.cmd.AddCommand(NewCmdGetService())
 	b.cmd.AddCommand(NewCmdGetDeployment())
+	b.cmd.AddCommand(NewCmdGetCluster())
 	return b
 }
 

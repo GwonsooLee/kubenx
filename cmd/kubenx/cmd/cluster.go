@@ -16,90 +16,273 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/olekukonko/tablewriter"
-	"github.com/spf13/cobra"
+	"fmt"
 	"os"
+	"io"
 	"strings"
+	"context"
+	"github.com/spf13/cobra"
+	"github.com/olekukonko/tablewriter"
+	"github.com/GwonsooLee/kubenx/pkg/aws"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 )
 
 var (
 	TAG_PREFIX = "kubernetes"
 )
 
-// clusterCmd represents the cluster command
-var clusterCmd = &cobra.Command{
-	Use:   "cluster",
-	Short: `Command about eks clutser`,
-	Long:  `Command about eks cluster`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) > 1 {
-			Red("Too many Arguments")
-			os.Exit(1)
-		}
-
-		_get_detail_info_of_cluster()
-	},
+//Get new get function
+func NewCmdCluster() *cobra.Command {
+	return NewCmd("cluster").
+		WithDescription("Cluster related command").
+		RunWithNoArgs(execCluster)
 }
 
-// Get detail information about cluster
-func _get_detail_info_of_cluster() {
-	svc := _get_eks_session()
+//Get new get function
+func NewCmdGetCluster() *cobra.Command {
+	return NewCmd("cluster").
+		WithDescription("Get informaton about cluster").
+		AddCommand(NewCmdInitCluster()).
+		RunWithNoArgs(execGetCluster)
+}
 
-	// Check the cluster First
-	cluster := _get_current_cluster()
+func execCluster(ctx context.Context, out io.Writer) error {
+	return nil
+}
 
-	// 1. Get Cluster Information
-	clusterInfo := _get_cluster_info_with_session(svc, cluster)
-
-	clusterTable := tablewriter.NewWriter(os.Stdout)
-	clusterTable.SetHeader([]string{"Name", cluster})
-	clusterTable.Append([]string{"Version", *clusterInfo.Cluster.Version})
-	clusterTable.Append([]string{"Status", *clusterInfo.Cluster.Status})
-	clusterTable.Append([]string{"Arn", *clusterInfo.Cluster.Arn})
-	clusterTable.Append([]string{"Endpoint", *clusterInfo.Cluster.Endpoint})
-	clusterTable.Append([]string{"Cluster SG", *clusterInfo.Cluster.ResourcesVpcConfig.ClusterSecurityGroupId})
-
-	// Get VPC Information
-	ec2_svc := _get_ec2_session()
-	vpcInfo := _get_vpc_info(ec2_svc, clusterInfo.Cluster.ResourcesVpcConfig.VpcId)
-	vpcName := ""
-	for _, obj := range vpcInfo.Vpcs[0].Tags {
-		if *obj.Key == "Name" {
-			vpcName = *obj.Value
-			break
-		}
-	}
-	vpcStr := vpcName + "(" + *vpcInfo.Vpcs[0].VpcId + ")"
-	clusterTable.Append([]string{"VPC ID", vpcStr})
-	clusterTable.Append([]string{"VPC Cidr Block", *vpcInfo.Vpcs[0].CidrBlock})
-
-	// Get Subnet Information
-	subnetList := clusterInfo.Cluster.ResourcesVpcConfig.SubnetIds
-	if len(subnetList) > 0 {
-		var subnetIds []*string
-		for _, subnetId := range subnetList {
-			subnetIds = append(subnetIds, subnetId)
+// Function for getting services
+func execGetCluster(ctx context.Context, out io.Writer) error {
+	return runExecutorWithAWS(ctx, func(executor Executor) error {
+		// Check the cluster First
+		cluster, err := GetCurrentCluster()
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
 		}
 
-		subnetInfo := _get_subnet_info(ec2_svc, subnetIds)
-		for _, subnetObj := range subnetInfo.Subnets {
-			az := subnetObj.AvailabilityZone
-			//subnetId := subnetObj.SubnetId
-			tags := ""
-			subnetName := ""
-			for _, obj := range subnetObj.Tags {
-				if strings.HasPrefix(*obj.Key, TAG_PREFIX) {
-					line := *obj.Key + "=" + *obj.Value + " "
-					tags += line
-				} else if *obj.Key == "Name" {
-					subnetName = *obj.Value
+		// 1. Get Cluster Information
+		clusterInfo, err := aws.GetClusterInfo(executor.EKS, cluster)
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		clusterTable := tablewriter.NewWriter(os.Stdout)
+		clusterTable.SetHeader([]string{"Name", cluster})
+		clusterTable.Append([]string{"Version", *clusterInfo.Cluster.Version})
+		clusterTable.Append([]string{"Status", *clusterInfo.Cluster.Status})
+		clusterTable.Append([]string{"Arn", *clusterInfo.Cluster.Arn})
+		clusterTable.Append([]string{"Endpoint", *clusterInfo.Cluster.Endpoint})
+		clusterTable.Append([]string{"Cluster SG", *clusterInfo.Cluster.ResourcesVpcConfig.ClusterSecurityGroupId})
+
+		// Get VPC Information
+		vpcInfo, err := aws.GetVPCInfo(executor.EC2, clusterInfo.Cluster.ResourcesVpcConfig.VpcId)
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		//Find VPC Name with Name Tag
+		vpcName := NO_STRING
+		for _, obj := range vpcInfo.Vpcs[0].Tags {
+			if *obj.Key == "Name" {
+				vpcName = *obj.Value
+				break
+			}
+		}
+		vpcStr := fmt.Sprintf("%s(%s)", vpcName, *vpcInfo.Vpcs[0].VpcId)
+		clusterTable.Append([]string{"VPC ID", vpcStr})
+		clusterTable.Append([]string{"VPC Cidr Block", *vpcInfo.Vpcs[0].CidrBlock})
+
+		// Get Subnet List in VPC
+		subnetList := clusterInfo.Cluster.ResourcesVpcConfig.SubnetIds
+		if len(subnetList) > 0 {
+			var subnetIds []*string
+			for _, subnetId := range subnetList {
+				subnetIds = append(subnetIds, subnetId)
+			}
+
+			//Get all subnet information
+			subnetInfo, err := aws.GetSubnetsInfo(executor.EC2, subnetIds)
+			if err != nil {
+				color.Red.Fprintln(out, err.Error())
+				return err
+			}
+
+			//Retrieve subnet details
+			for _, subnetObj := range subnetInfo.Subnets {
+				az := subnetObj.AvailabilityZone
+				tags := NO_STRING
+				subnetName := NO_STRING
+				for _, obj := range subnetObj.Tags {
+					if strings.HasPrefix(*obj.Key, TAG_PREFIX) {
+						line := fmt.Sprintf("%s=%s ", *obj.Key, *obj.Value)
+						tags += line
+					} else if *obj.Key == "Name" {
+						subnetName = *obj.Value
+					}
+				}
+
+				clusterTable.Append([]string{subnetName + "(" + *az + ")", tags})
+			}
+		}
+
+		clusterTable.SetAlignment(tablewriter.ALIGN_LEFT)
+		clusterTable.Render()
+		return nil
+	})
+}
+
+//Init Cluster
+func NewCmdInitCluster() *cobra.Command {
+	return NewCmd("init").
+		WithDescription("Initiating the EKS cluster for further usage").
+		RunWithNoArgs(execInitCluster)
+}
+
+// Function for init cluster services
+func execInitCluster(ctx context.Context, out io.Writer) error {
+	return runExecutorWithAWS(ctx, func(executor Executor) error {
+
+		// Print the description for initialization
+		color.Red.Fprintln(out, "******* Steps for initialization ********")
+		color.Yellow.Fprintln(out, "Step 1. Tag setup for VPC")
+		color.Yellow.Fprintln(out, "Step 2. Tag setup for public subnet")
+		color.Yellow.Fprintln(out, "Step 3. Tag setup for private subnet")
+		color.Yellow.Fprintln(out, "Step 4. Create Open ID Connector")
+		fmt.Println()
+
+		// Get Cluster Information First
+		// Check the cluster First
+		cluster, err := GetCurrentCluster()
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		// 1. Get Cluster Information
+		clusterInfo, err := aws.GetClusterInfo(executor.EKS, cluster)
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		// 2. Get VPC ID and subnets in that VPC
+		vpcId := clusterInfo.Cluster.ResourcesVpcConfig.VpcId
+		subnetList, err := aws.GetSubnetListInVPC(executor.EC2, vpcId)
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		if len(subnetList.Subnets) == 0 {
+			color.Red.Fprintln(out, fmt.Errorf("No subnet exists, please checkout out VPC"))
+			return err
+		}
+
+		// 3. Get VPC Information
+		vpcInfo, err := aws.GetVPCInfo(executor.EC2, vpcId)
+		if err != nil {
+			color.Red.Fprintln(out, err.Error())
+			return err
+		}
+
+		// Tags
+		tags := vpcInfo.Vpcs[0].Tags
+
+		hasVPCTag := false
+		for _, tag := range tags {
+			if *tag.Key == "kubernetes.io/cluster/"+cluster && *tag.Value == "shared" {
+				hasVPCTag = true
+			}
+		}
+
+		// Check the vpc tag is updated
+		if hasVPCTag {
+			color.Blue.Fprintln(out, "Step 1. VPC Tag is already updated")
+		} else {
+			color.Red.Fprintln(out, "Step 1. VPC Tag needs to be updated")
+			aws.UpdateVPCTagForCluster(executor.EC2, vpcId, cluster)
+		}
+
+		// 4. Set Subnet Information
+		var publicSubnetIds []*string
+		var privateSubnetIds []*string
+		for _, subnet := range subnetList.Subnets {
+			// Check public subnet
+			clusterNameSetup := false
+			ELBTypeSetup := false
+			isFilteredSubnet := false
+			if *subnet.MapPublicIpOnLaunch {
+				for _, tag := range subnet.Tags {
+					if *tag.Key == "kubernetes.io/cluster/"+cluster && *tag.Value == "shared" {
+						clusterNameSetup = true
+					}
+
+					if *tag.Key == "kubernetes.io/role/elb" && *tag.Value == "1" {
+						ELBTypeSetup = true
+					}
+
+					if *tag.Key == "Name" && strings.HasPrefix(*tag.Value, "db") {
+						isFilteredSubnet = true
+						break
+					}
+				}
+
+				if !(ELBTypeSetup && clusterNameSetup) && !isFilteredSubnet {
+					publicSubnetIds = append(publicSubnetIds, subnet.SubnetId)
+				}
+			} else {
+				for _, tag := range subnet.Tags {
+					if *tag.Key == "kubernetes.io/cluster/"+cluster && *tag.Value == "shared" {
+						clusterNameSetup = true
+					}
+
+					if *tag.Key == "kubernetes.io/role/internal-elb" && *tag.Value == "1" {
+						ELBTypeSetup = true
+					}
+
+					if *tag.Key == "Name" && strings.HasPrefix(*tag.Value, "db") {
+						isFilteredSubnet = true
+						break
+					}
+				}
+
+				if !(ELBTypeSetup && clusterNameSetup) && !isFilteredSubnet {
+					privateSubnetIds = append(privateSubnetIds, subnet.SubnetId)
 				}
 			}
 
-			clusterTable.Append([]string{subnetName + "(" + *az + ")", tags})
 		}
-	}
 
-	clusterTable.SetAlignment(tablewriter.ALIGN_LEFT)
-	clusterTable.Render()
+		// Add Tag if there is public subnet which doesn't have the necessary tags
+		if len(publicSubnetIds) > 0 {
+			Red("Step 2. Tags for Public Subnet needs to be updated")
+			aws.UpdateSubnetsTagForCluster(executor.EC2, publicSubnetIds, cluster, "public")
+		} else {
+			Blue("Step 2. Tags for Public Subnet is already updated")
+		}
+
+		// Add Tag if there is private subnet which doesn't have the necessary tags
+		if len(privateSubnetIds) > 0 {
+			Red("Step 3. Tags for Private Subnet needs to be updated")
+			aws.UpdateSubnetsTagForCluster(executor.EC2, privateSubnetIds, cluster, "private")
+		} else {
+			Blue("Step 3. Tags for Private Subnet is already updated")
+		}
+
+		// 5. OpenID Connector Check
+		ret, err := aws.CreateOpenIDConnector(executor.IAM, clusterInfo.Cluster.Identity.Oidc.Issuer)
+
+		if ret == aws.ALREADY_EXISTS {
+			color.Blue.Fprintln(out, "Step 4. OIDC Provider already exists")
+		} else if ret == aws.NEWLY_CREATED {
+			color.Red.Fprintln(out, "Step 4. New OIDC Provider is successfully created")
+		} else {
+			color.Red.Fprintln(out, err)
+			return err
+		}
+
+		return nil
+	})
 }

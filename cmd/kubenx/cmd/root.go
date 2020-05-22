@@ -57,11 +57,6 @@ var (
 	Yellow = color.New(color.FgYellow).PrintlnFunc()
 	Cyan   = color.New(color.FgCyan).PrintlnFunc()
 
-	//Constant Value
-	ALREADY_EXISTS   = 2
-	NEWLY_CREATED    = 1
-	CREATION_FAILURE = 0
-
 	//OPEN_ID_CA_FINGERPRINT
 	CA_FINGERPRINT = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
 

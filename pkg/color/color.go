@@ -33,9 +33,9 @@ func (c Color) Fprintln(out io.Writer, a ...interface{}) {
 // Fprintf outputs the result to out.
 func (c Color) Fprintf(out io.Writer, format string, a ...interface{}) {
 	if c.color == nil {
-		fmt.Fprintf(out, format, a...)
+		fmt.Fprintf(out, format+"\n", a...)
 		return
 	}
 
-	fmt.Fprint(out, c.color.Sprintf(format, a...))
+	fmt.Fprint(out, c.color.Sprintf(format+"\n", a...))
 }

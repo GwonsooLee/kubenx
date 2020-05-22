@@ -45,6 +45,10 @@ You can find more information in https://github.com/GwonsooLee/kubenx`,
 	groups.Add(rootCmd)
 
 	rootCmd.AddCommand(NewCmdPortForward())
+	rootCmd.AddCommand(NewCmdNamespace())
+	rootCmd.AddCommand(NewCmdGetCluster())
+	rootCmd.AddCommand(NewCmdCompletion())
+	rootCmd.AddCommand(NewCmdContext())
 
 	templates.ActsAsRootCommand(rootCmd, nil, groups...)
 

@@ -26,8 +26,6 @@ import (
 	"github.com/GwonsooLee/kubenx/pkg/utils"
 )
 
-
-
 //Create Command for get service
 func NewCmdGetDeployment() *cobra.Command {
 	return NewCmd("deployment").
@@ -35,7 +33,6 @@ func NewCmdGetDeployment() *cobra.Command {
 		SetAliases([]string{"dep", "deploy"}).
 		RunWithNoArgs(execGetDeployment)
 }
-
 
 // Function for getting services
 func execGetDeployment(ctx context.Context, out io.Writer) error {
