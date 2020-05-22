@@ -1,7 +1,10 @@
 package color
 
 import (
+	"fmt"
 	"github.com/fatih/color"
+	"strings"
+	"io"
 )
 
 type Color struct {
