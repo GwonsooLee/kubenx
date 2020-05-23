@@ -42,9 +42,6 @@ func execGetDeployment(ctx context.Context, out io.Writer) error {
 		now := time.Now()
 		var depList []string
 
-		//Get Clientset
-		clientset := _get_v1beta_client_with_configuration(executor.Config)
-
 		//Get all deployments list in the namespace
 		errorCount := 0
 
@@ -53,7 +50,7 @@ func execGetDeployment(ctx context.Context, out io.Writer) error {
 		table.SetHeader([]string{"Name", "READY", "UP-TO-DATE", "AVAILABLE", "STRATEGY TYPE", "MAX UNAVAILABLE", "NAX SURGE", "CONTAINERS", "IMAGE", "AGE"})
 
 		// Search Deployment with v1beta1
-		deployments, err := clientset.Deployments(executor.Namespace).List(ctx, metav1.ListOptions{})
+		deployments, err := executor.BetaV1Client.Deployments(executor.Namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			errorCount += 1
 		} else {

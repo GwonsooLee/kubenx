@@ -17,12 +17,16 @@ package cmd
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
+	"github.com/GwonsooLee/kubenx/pkg/aws"
 	"github.com/GwonsooLee/kubenx/pkg/color"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"io"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 	"strings"
 )
 
@@ -32,10 +36,18 @@ func NewCmdConfig() *cobra.Command {
 	return NewCmd("config").
 		WithDescription("Manage Kubernetes Config").
 		AddConfigGroups().
+		SetFlags().
 		RunWithNoArgs(execConfig)
 }
 
-//Search Label command
+//Update config command
+func NewCmdConfigUpdate() *cobra.Command {
+	return NewCmd("update").
+		WithDescription("Update specific cluster configuration in kbueconfig").
+		RunWithArgs(execUpdateConfig)
+}
+
+//Delete config command
 func NewCmdConfigDelete() *cobra.Command {
 	return NewCmd("delete").
 		WithDescription("Delete specific cluster configuration in kbueconfig").
@@ -46,6 +58,93 @@ func NewCmdConfigDelete() *cobra.Command {
 // Function for Config execution
 func execConfig(_ context.Context, _ io.Writer) error {
 	return nil
+}
+
+
+// Function for update configuration in kubeconfig
+func execUpdateConfig(ctx context.Context, out io.Writer, args []string) error {
+	return runExecutorWithAWS(ctx, func(executor Executor) error {
+		var cluster string
+
+		// 1. Check Cluster
+		if len(args) == 1 {
+			cluster = args[0]
+		}
+
+		if len(cluster) == 0 {
+			clusters := getEKSClusterList(executor.EKS)
+			prompt := &survey.Select{
+				Message: "Choose a cluster:",
+				Options: clusters,
+			}
+			survey.AskOne(prompt, &cluster)
+		}
+
+		// if cluster is not set
+		if cluster == "" {
+			color.Red.Fprintln(out, fmt.Sprintf("No cluster exists in %s region...", viper.GetString("region")))
+			return nil
+		}
+
+		// Get Current Config
+		configAccess := clientcmd.NewDefaultPathOptions()
+		config, err := configAccess.GetStartingConfig()
+		if err != nil {
+			return err
+		}
+
+		// 2. Get Cluster Information
+		clusterInfo, err := aws.GetClusterInfo(executor.EKS, cluster)
+		if err != nil {
+			return err
+		}
+
+		arn 	:= *clusterInfo.Cluster.Arn
+		name 	:= *clusterInfo.Cluster.Name
+
+		//Check existing cluster
+		isUpdated := false
+		for _, c := range config.Clusters {
+			if c.Server ==  *clusterInfo.Cluster.Endpoint {
+				color.Red.Fprintln(out, fmt.Sprintf("%s config already exist", name))
+				isUpdated = true
+			}
+		}
+
+		newCluster := api.NewCluster()
+		decoded, _ := base64.StdEncoding.DecodeString(*clusterInfo.Cluster.CertificateAuthority.Data)
+		newCluster.CertificateAuthorityData = decoded
+		newCluster.Server 					= *clusterInfo.Cluster.Endpoint
+
+		newAuthInfo := api.NewAuthInfo()
+		newAuthInfo.Exec			= &api.ExecConfig{
+			Command:    AUTH_COMMAND,
+			Args:       []string{"--region", viper.GetString("region"), "eks", "get-token", "--cluster-name", name},
+			APIVersion: AUTH_API_VERSION,
+		}
+
+		newContext := api.NewContext()
+		newContext.Cluster 					= arn
+		newContext.AuthInfo					= arn
+
+
+		config.Clusters[arn] 	= newCluster
+		config.AuthInfos[arn] 	= newAuthInfo
+		config.Contexts[name]	= newContext
+
+		if err := clientcmd.ModifyConfig(configAccess, *config, true); err != nil {
+			return err
+		}
+
+		if isUpdated {
+			color.Blue.Fprintln(out, fmt.Sprintf("Update existing context %s", name))
+		} else {
+			color.Blue.Fprintln(out, fmt.Sprintf("Create new context %s", name))
+		}
+
+
+		return nil
+	})
 }
 
 // Function for delete configuration in kubeconfig
@@ -60,7 +159,7 @@ func execDeleteConfig(ctx context.Context, out io.Writer, cmd *cobra.Command, ar
 
 // Delete Configuration
 func deleteClusterConfig(out io.Writer, configAccess clientcmd.ConfigAccess, cmd *cobra.Command) error {
-	var targetContexts []string
+	targetContexts := []string{}
 	config, err := configAccess.GetStartingConfig()
 	if err != nil {
 		return err
@@ -92,14 +191,24 @@ func deleteClusterConfig(out io.Writer, configAccess clientcmd.ConfigAccess, cmd
 			color.Red.Fprintln(out, "No context has been selected")
 			return nil
 		}
+	}else {
+		targetContexts = append(targetContexts, args[0])
 	}
 
 	for _, target := range targetContexts {
+		//Delete Context
+		_, ok := config.Contexts[target]
+		if !ok {
+			color.Red.Fprintln(out, fmt.Sprintf("cannot delete context %s, not in %s", target, configFile))
+			return nil
+		}
+
+
 		cluster := config.Contexts[target].Cluster
 		name := config.Contexts[target].AuthInfo
 
 		//Delete cluster
-		_, ok := config.Clusters[cluster]
+		_, ok = config.Clusters[cluster]
 		if !ok {
 			color.Red.Fprintln(out, fmt.Sprintf("cannot delete cluster %s, not in %s", cluster, configFile))
 		} else {
@@ -114,13 +223,7 @@ func deleteClusterConfig(out io.Writer, configAccess clientcmd.ConfigAccess, cmd
 			delete(config.AuthInfos, name)
 		}
 
-		//Delete Context
-		_, ok = config.Contexts[target]
-		if !ok {
-			color.Red.Fprintln(out, fmt.Sprintf("cannot delete context %s, not in %s", target, configFile))
-		} else {
-			delete(config.Contexts, target)
-		}
+		delete(config.Contexts, target)
 	}
 
 	if err := clientcmd.ModifyConfig(configAccess, *config, true); err != nil {

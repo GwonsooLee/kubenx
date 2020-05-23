@@ -13,13 +13,12 @@ import (
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	typedRbacv1 "k8s.io/client-go/kubernetes/typed/rbac/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
-	v1beta1 "k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
+	typedRbacv1 "k8s.io/client-go/kubernetes/typed/rbac/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -29,7 +28,6 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/GwonsooLee/kubenx/pkg/table"
-	"github.com/spf13/viper"
 )
 
 //Port Forward Request
@@ -113,103 +111,6 @@ func getConfigFromFlag() (*rest.Config, error) {
 
 	return config, nil
 }
-
-// Get current namespace
-func _get_namespace() string {
-	//Check all Namespace
-	allNamespace := viper.GetBool("all")
-	if allNamespace == true {
-		return ""
-	}
-
-	//Check the flag
-	ret := viper.GetString("namespace")
-
-	// If no flag is given, then set current namespace
-	if len(ret) <= 0 {
-		loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-		configOverrides := &clientcmd.ConfigOverrides{}
-		kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-		namespace, _, err := clientcmd.ClientConfig.Namespace(kubeConfig)
-		if err != nil {
-			Red(err.Error())
-			os.Exit(1)
-		}
-
-		ret = namespace
-	}
-
-	return ret
-}
-
-// Get Current Cluster
-func _get_current_cluster() string {
-
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	configOverrides := &clientcmd.ConfigOverrides{}
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	rawConfig, err := clientcmd.ClientConfig.RawConfig(kubeConfig)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	return rawConfig.CurrentContext
-}
-
-// Get v1beta Client
-func _get_v1beta_client() *v1beta1.ExtensionsV1beta1Client {
-	//get Configuration
-	config := _get_configuration()
-
-	// create the clientset
-	clientset, err := v1beta1.NewForConfig(config)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	return clientset
-}
-
-// Get v1beta Client with configuration
-func _get_v1beta_client_with_configuration(config *rest.Config) *v1beta1.ExtensionsV1beta1Client {
-	//get Configuration
-	if config == nil {
-		config = _get_configuration()
-	}
-
-	// create the clientset
-	clientset, err := v1beta1.NewForConfig(config)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	return clientset
-}
-
-// Get Kubernetes Configuration
-func _get_configuration() *rest.Config {
-	var kubeconfig *string
-	if home := homeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-
-	flag.Parse()
-
-	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	return config
-}
-
 // Get All Raw Pod list
 func getAllRawPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Pod, error) {
 	listOpt := metav1.ListOptions{}
@@ -753,3 +654,19 @@ func renderNodeListInfo(nodes []corev1.Node) bool {
 	return true
 }
 
+
+
+// Get Current Cluster
+func _get_current_cluster() string {
+
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	configOverrides := &clientcmd.ConfigOverrides{}
+	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+	rawConfig, err := clientcmd.ClientConfig.RawConfig(kubeConfig)
+	if err != nil {
+		Red(err.Error())
+		os.Exit(1)
+	}
+
+	return rawConfig.CurrentContext
+}

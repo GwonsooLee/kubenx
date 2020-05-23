@@ -11,6 +11,25 @@ import (
 	"github.com/spf13/viper"
 )
 
+
+// Get All EKS Cluster
+func getEKSClusterList(svc *eks.EKS) []string {
+	inputParams := &eks.ListClustersInput{MaxResults: aws.Int64(100)}
+	res, err := svc.ListClusters(inputParams)
+	if err != nil {
+		Red(err)
+		os.Exit(1)
+	}
+
+	// Change []*string to []string
+	var ret []string
+	for _, cluster := range res.Clusters {
+		ret = append(ret, *cluster)
+	}
+
+	return ret
+}
+
 // Get EKS Session
 func _get_eks_session() *eks.EKS {
 	awsRegion := viper.GetString("region")

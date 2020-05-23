@@ -50,7 +50,7 @@ var FlagRegistry = []Flag{
 		Value:         aws.String(NO_STRING),
 		DefValue:      "ap-northeast-2",
 		FlagAddMethod: "StringVar",
-		DefinedOn:     []string{"pod", "deployment", "service", "serviceaccount", "configmap", "ingress", "cluster", "init"},
+		DefinedOn:     []string{"cluster", "init", "update"},
 	},
 	{
 		Name:          "all",

@@ -205,8 +205,6 @@ No node exists in the namespace
   nginx-deployment-56f8998dbc-pz4b2  1/1    Running            10.1.0.170  192.168.65.3  docker-desktop  34m
   web-0                              0/0    Pending  web-0                                               34m
 ```
-<br>
-
 
 ### 3. Clean kubeconfig easily.
 * You can clean configurations in kubeconfig. 
@@ -222,7 +220,22 @@ $ kubenx config delete
   [ ]  eks-test2-apnortheast2
   [ ]  eks-common-k8s-useast2
 ```
+
+### 4. Update kubeconfig from EKS cluster
+* You can update kubeconfig without searching eks cluster
+```bash
+$ kubenx config update
+? Choose a cluster:  [Use arrows to move, type to filter]
+> eks-sample-apnortheast2-v1
+  eks-sample-apnortheast2-v2
+
+Create new context eks-sample-apnortheast2-v1
+
+## Also you can run with cluster name
+$ kubenx config update eks-sample-apnortheast2-v1
+```
 <br>
+
 
 
 ## Command For EKS Cluster

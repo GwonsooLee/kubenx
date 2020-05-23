@@ -122,6 +122,7 @@ func (b builder) AddInspectGroups() Builder {
 // Add groups of commands for config command
 func (b builder) AddConfigGroups() Builder {
 	b.cmd.AddCommand(NewCmdConfigDelete())
+	b.cmd.AddCommand(NewCmdConfigUpdate())
 	return b
 }
 

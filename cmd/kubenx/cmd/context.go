@@ -36,6 +36,12 @@ func NewCmdContext() *cobra.Command {
 
 // Function for changing context
 func execContext(_ context.Context, out io.Writer, args []string) error {
+	return changeContext(out, args)
+}
+
+//Change Context
+func changeContext(out io.Writer, args []string) error {
+
 	var contextList []string
 	var newContext string
 

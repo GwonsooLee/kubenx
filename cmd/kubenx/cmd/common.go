@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"os"
+	"reflect"
 	"strconv"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/olekukonko/tablewriter"
+	"unsafe"
 )
 
 var (
@@ -14,10 +16,12 @@ var (
 	NO_STRING=""
 	DEFAULT_NODE_LABEL_FILTERS=[]string{"app", "env"}
 	//STATIS VALUE
-	KUBENX_HOMEDIR = ".kubenx"
-	SSH_DEFAULT_PATH = "ssh"
+	KUBENX_HOMEDIR 		= ".kubenx"
+	SSH_DEFAULT_PATH 	= "ssh"
 	TARGET_DEFAULT_PORT = "22"
-	AWS_IAM_ANNOTATION = "eks.amazonaws.com/role-arn"
+	AWS_IAM_ANNOTATION 	= "eks.amazonaws.com/role-arn"
+	AUTH_API_VERSION 	= "client.authentication.k8s.io/v1alpha1"
+	AUTH_COMMAND		= "aws"
 
 
 	//Color Definition
@@ -98,4 +102,20 @@ func getSingleStringInput(message string) (string, error) {
 	}
 
 	return ret, nil
+}
+
+func BytesToString(bytes []byte) (s string) {
+	hdr := *(*reflect.SliceHeader)(unsafe.Pointer(&bytes))
+	return *(*string)(unsafe.Pointer(&reflect.StringHeader{
+		Data: hdr.Data,
+		Len:  hdr.Len,
+	}))
+}
+func StringToBytes(str string) []byte {
+	hdr := *(*reflect.StringHeader)(unsafe.Pointer(&str))
+	return *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{
+		Data: hdr.Data,
+		Len:  hdr.Len,
+		Cap:  hdr.Len,
+	}))
 }
