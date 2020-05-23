@@ -14,6 +14,7 @@ type Builder interface {
 	AddGetGroups() Builder
 	AddSearchGroups() Builder
 	AddInspectGroups() Builder
+	AddConfigGroups() Builder
 	SetFlags() Builder
 	RunWithNoArgs(action func(context.Context, io.Writer) error) *cobra.Command
 	RunWithArgs(action func(context.Context, io.Writer, []string) error) *cobra.Command
@@ -115,6 +116,12 @@ func (b builder) AddSearchGroups() Builder {
 // Add groups of commands for search command
 func (b builder) AddInspectGroups() Builder {
 	b.cmd.AddCommand(NewCmdInspectNode())
+	return b
+}
+
+// Add groups of commands for config command
+func (b builder) AddConfigGroups() Builder {
+	b.cmd.AddCommand(NewCmdConfigDelete())
 	return b
 }
 

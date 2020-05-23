@@ -45,18 +45,24 @@ You can find more information in https://github.com/GwonsooLee/kubenx`,
 				NewCmdInspect(),
 			},
 		},
+		{
+			Message: "manager EKS Cluster",
+			Commands: []*cobra.Command{
+				NewCmdCluster(),
+				NewCmdConfig(),
+			},
+		},
 	}
 
 	groups.Add(rootCmd)
 
 	rootCmd.AddCommand(NewCmdPortForward())
 	rootCmd.AddCommand(NewCmdNamespace())
-	rootCmd.AddCommand(NewCmdCluster())
-	rootCmd.AddCommand(NewCmdCompletion())
 	rootCmd.AddCommand(NewCmdContext())
+	rootCmd.AddCommand(NewCmdCompletion())
 	rootCmd.AddCommand(NewCmdVersion())
 
-	//templates.ActsAsRootCommand(rootCmd, nil, groups...)
+	templates.ActsAsRootCommand(rootCmd, nil, groups...)
 
 	return rootCmd
 }

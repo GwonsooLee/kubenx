@@ -1,4 +1,4 @@
-VERSION := 1.0.2
+VERSION := 1.0.3
 LOCALPATH := /usr/local/bin/
 ARTIFACT_PATH := bin
 SCRIPT_FILE=release.sh
@@ -12,5 +12,7 @@ clean:
 
 upload:
 	./${SCRIPT_FILE} ${VERSION}
+
+install: build clean
 
 all: build upload clean

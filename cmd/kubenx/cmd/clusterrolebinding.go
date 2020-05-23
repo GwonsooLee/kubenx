@@ -11,7 +11,7 @@ import (
 func NewCmdGetClusterRoleBinding() *cobra.Command {
 	return NewCmd("clusterrolebinding").
 		WithDescription("Get clusterrole list").
-		SetAliases([]string{"cr", "clusterrolebindings"}).
+		SetAliases([]string{"clusterrolebindings"}).
 		RunWithNoArgs(execGetClusterRoleBinding)
 }
 

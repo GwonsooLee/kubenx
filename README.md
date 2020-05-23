@@ -207,6 +207,24 @@ No node exists in the namespace
 ```
 <br>
 
+
+### 3. Clean kubeconfig easily.
+* You can clean configurations in kubeconfig. 
+* You can select multiple `context` by clicking `space key`.
+* Of course you can search context while checking target cluster to delete.
+```bash
+$ kubenx config delete
+? Pick contexts you want to delete:  [Use arrows to move, space to select, type to filter]
+  [ ]  eks-sample-apne2
+  [ ]  eks-sample-apnortheast2-v2
+> [x]  minikube
+  [ ]  eks-test-apnortheast2
+  [ ]  eks-test2-apnortheast2
+  [ ]  eks-common-k8s-useast2
+```
+<br>
+
+
 ## Command For EKS Cluster
 * Before you search clusters, please assume credentials of target AWS Account
 ### 1. Initiating VPC Cluster 
