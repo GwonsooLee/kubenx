@@ -9,12 +9,14 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/client-go/kubernetes"
 	v1beta1 "k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
+	rbacv1 "k8s.io/client-go/kubernetes/typed/rbac/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 type Executor struct {
 	Client 			*kubernetes.Clientset
 	BetaV1Client 	*v1beta1.ExtensionsV1beta1Client
+	RbacV1Client 	*rbacv1.RbacV1Client
 	EKS 			*eks.EKS
 	EC2 			*ec2.EC2
 	IAM 			*iam.IAM
@@ -73,13 +75,22 @@ func createNewExecutor() (Executor, error) {
 
 	executor.Client = clientset
 
-	// create the clientset
+	// create the v1beta1 clientset
 	betav1clientset, err := v1beta1.NewForConfig(config)
 	if err != nil {
 		return executor, err
 	}
 
 	executor.BetaV1Client = betav1clientset
+
+
+	// create the rbac client
+	rbacv1clientset, err := rbacv1.NewForConfig(config)
+	if err != nil {
+		return executor, err
+	}
+
+	executor.RbacV1Client = rbacv1clientset
 
 	//Check the flag
 	setAll := viper.GetBool("all")

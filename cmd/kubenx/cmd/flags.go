@@ -41,7 +41,7 @@ var FlagRegistry = []Flag{
 		Value:         aws.String(NO_STRING),
 		DefValue:      "",
 		FlagAddMethod: "StringVar",
-		DefinedOn:     []string{"pod", "deployment", "service", "serviceaccount", "configmap", "ingress"},
+		DefinedOn:     []string{"pod", "deployment", "service", "serviceaccount", "configmap", "ingress", "role", "rolebinding", "secret" },
 	},
 	{
 		Name:          "region",
@@ -59,7 +59,7 @@ var FlagRegistry = []Flag{
 		Value:         aws.Bool(false),
 		DefValue:      false,
 		FlagAddMethod: "BoolVar",
-		DefinedOn:     []string{"pod", "deployment", "service", "serviceaccount", "configmap", "ingress"},
+		DefinedOn:     []string{"pod", "deployment", "service", "serviceaccount", "configmap", "ingress", "role", "clusterrole", "rolebinding", "clusterrolebinding", "secret"},
 	},
 }
 

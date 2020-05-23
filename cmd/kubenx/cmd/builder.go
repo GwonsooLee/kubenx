@@ -98,6 +98,11 @@ func (b builder) AddGetGroups() Builder {
 	b.cmd.AddCommand(NewCmdGetConfigMap())
 	b.cmd.AddCommand(NewCmdGetSecret())
 	b.cmd.AddCommand(NewCmdGetServiceAccount())
+	b.cmd.AddCommand(NewCmdGetClusterRole())
+	b.cmd.AddCommand(NewCmdGetRole())
+	b.cmd.AddCommand(NewCmdGetRolebinding())
+	b.cmd.AddCommand(NewCmdGetClusterRoleBinding())
+
 	return b
 }
 

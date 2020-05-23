@@ -14,6 +14,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	typedRbacv1 "k8s.io/client-go/kubernetes/typed/rbac/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
@@ -155,38 +157,6 @@ func _get_current_cluster() string {
 	return rawConfig.CurrentContext
 }
 
-// Get K8s Client (Version 1)
-func _get_k8s_client() *kubernetes.Clientset {
-	//get Configuration
-	config := _get_configuration()
-
-	// create the clientset
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	return clientset
-}
-
-// Get K8s Client (Version 1)
-func _get_k8s_client_with_configuration(config *rest.Config) *kubernetes.Clientset {
-	//get Configuration
-	if config == nil {
-		config = _get_configuration()
-	}
-
-	// create the clientset
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	return clientset
-}
-
 // Get v1beta Client
 func _get_v1beta_client() *v1beta1.ExtensionsV1beta1Client {
 	//get Configuration
@@ -240,224 +210,6 @@ func _get_configuration() *rest.Config {
 	return config
 }
 
-// Change current Context
-func _change_current_context() {
-	var kubeconfig *string
-	var contextList []string
-	if home := homeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-
-	configs, err := clientcmd.LoadFromFile(*kubeconfig)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	// get list of context
-	for context, _ := range configs.Contexts {
-		contextList = append(contextList, context)
-	}
-
-	// Get Client Configuration
-	configOverrides := &clientcmd.ConfigOverrides{}
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-	currentConfig, err := kubeConfig.RawConfig()
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	//getting current Context
-	currentContext := currentConfig.CurrentContext
-
-	// Get New Context
-	newContext := ""
-	Red("Current Context: " + currentContext)
-	prompt := &survey.Select{
-		Message: "Choose Context:",
-		Options: contextList,
-	}
-	survey.AskOne(prompt, &newContext)
-
-	if newContext == "" {
-		Red("Changing Context has been canceled")
-		os.Exit(1)
-	}
-
-	//Change To New Context
-	currentConfig.CurrentContext = newContext
-	configAccess := clientcmd.NewDefaultClientConfig(*configs, configOverrides).ConfigAccess()
-
-	clientcmd.ModifyConfig(configAccess, currentConfig, false)
-	Yellow("Context is changed to \"" + newContext + "\"")
-}
-
-// Get ingress List
-func _get_ingress_list() {
-	//Get kubernetes Client
-	clientset := _get_v1beta_client()
-
-	//Get namespace
-	namespace := _get_namespace()
-
-	//Get all ingress list in the namespace
-	ingresses, err := clientset.Ingresses(namespace).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	//Tables to show information
-	table := _get_table_object()
-	table.SetHeader([]string{"Name", "HOST", "ADDRESS", "PATH", "PORTS", "TARGET SERVICE", "AGE"})
-
-	now := time.Now()
-	for _, ingress := range ingresses.Items {
-		objectMeta := ingress.ObjectMeta
-		ingressSpec := ingress.Spec
-
-		var address string
-		if len(ingress.Status.LoadBalancer.Ingress) == 0 {
-			address = ""
-		} else {
-			address = ingress.Status.LoadBalancer.Ingress[0].Hostname
-		}
-		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
-
-		host := ingressSpec.Rules[0].Host
-		if len(host) <= 0 {
-			host = "*"
-		}
-
-		port := []string{}
-		service := []string{}
-		paths := []string{}
-		for _, path := range ingressSpec.Rules[0].IngressRuleValue.HTTP.Paths {
-			if path.Backend.ServicePort.IntVal != 0 {
-				port = append(port, _int32_to_string(path.Backend.ServicePort.IntVal))
-			}
-			service = append(service, path.Backend.ServiceName)
-			paths = append(paths, path.Path)
-		}
-		table.Append([]string{objectMeta.Name, host, address, strings.Join(paths, ","), strings.Join(port, ","), strings.Join(service, ","), duration})
-	}
-	table.Render()
-}
-
-// Get Deployment List
-func _get_deployment_list() {
-	now := time.Now()
-	var depList []string
-
-	// Get Configuration
-	config := _get_configuration()
-
-	//Get Clientset
-	clientset := _get_v1beta_client_with_configuration(config)
-	clientset_v1 := _get_k8s_client_with_configuration(config)
-
-	//Get namespace
-	namespace := _get_namespace()
-
-	//Get all deployments list in the namespace
-	errorCount := 0
-
-	//Tables to show information
-	table := _get_table_object()
-	table.SetHeader([]string{"Name", "READY", "UP-TO-DATE", "AVAILABLE", "Strategy Type", "MaxUnavailable", "MaxSurge", "CONTAINERS", "IMAGE", "AGE"})
-
-	// Search Deployment with v1beta1
-	deployments, err := clientset.Deployments(namespace).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		errorCount += 1
-	} else {
-		//Start Searching
-		for _, deployment := range deployments.Items {
-			//Get Object Meta Data
-			objectMeta := deployment.ObjectMeta
-			spec := deployment.Spec
-
-			duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
-
-			// Check if it is using RollingUpdate strategy in order to get MaxUnAvailable, MaxSurge
-			maxUnavailable := ""
-			maxSurge := ""
-			if spec.Strategy.RollingUpdate != nil {
-				maxUnavailable = spec.Strategy.RollingUpdate.MaxUnavailable.StrVal
-				maxSurge = spec.Strategy.RollingUpdate.MaxSurge.StrVal
-			}
-
-			// Get container spec in pod
-			podSpec := spec.Template.Spec
-			nameString := ""
-			imageString := ""
-			for _, container := range podSpec.Containers {
-				nameString += container.Name + "\n"
-				imageString += container.Image + "\n"
-			}
-
-			table.Append([]string{objectMeta.Name, _int32_to_string(*spec.Replicas), _int32_to_string(deployment.Status.UpdatedReplicas), _int32_to_string(deployment.Status.AvailableReplicas), string(spec.Strategy.Type), maxUnavailable, maxSurge, nameString, imageString, duration})
-			depList = append(depList, objectMeta.Name)
-		}
-	}
-
-	// Get Deployment with core v1 version
-	deploymentsV1, err := clientset_v1.AppsV1().Deployments(namespace).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		errorCount += 1
-	} else {
-		//Start Searching
-		for _, deployment := range deploymentsV1.Items {
-			//Get Object Meta Data
-			objectMeta := deployment.ObjectMeta
-
-			hasValue := false
-			for _, element := range depList {
-				if element == objectMeta.Name {
-					hasValue = true
-					break
-				}
-			}
-
-			if hasValue { continue}
-
-			spec := deployment.Spec
-			duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
-
-			// Check if it is using RollingUpdate strategy in order to get MaxUnAvailable, MaxSurge
-			maxUnavailable := ""
-			maxSurge := ""
-			if spec.Strategy.RollingUpdate != nil {
-				maxUnavailable = spec.Strategy.RollingUpdate.MaxUnavailable.StrVal
-				maxSurge = spec.Strategy.RollingUpdate.MaxSurge.StrVal
-			}
-
-			// Get container spec in pod
-			podSpec := spec.Template.Spec
-			nameString := ""
-			imageString := ""
-			for _, container := range podSpec.Containers {
-				nameString += container.Name + "\n"
-				imageString += container.Image + "\n"
-			}
-
-			table.Append([]string{objectMeta.Name, _int32_to_string(*spec.Replicas), _int32_to_string(deployment.Status.UpdatedReplicas), _int32_to_string(deployment.Status.AvailableReplicas), string(spec.Strategy.Type), maxUnavailable, maxSurge, nameString, imageString, duration})
-		}
-	}
-
-	// If Error count is larger than 1, which means no deployment int the cluster
-	if errorCount > 1 {
-		Red("The server could not find the requested resource")
-		os.Exit(1)
-	}
-	table.Render()
-}
-
 // Get All Raw Pod list
 func getAllRawPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Pod, error) {
 	listOpt := metav1.ListOptions{}
@@ -503,6 +255,68 @@ func getAllRawSecrets(ctx context.Context, clientset *kubernetes.Clientset, name
 	return secrets.Items, nil
 }
 
+
+// Get All Raw clusterrole list
+func getAllRawClusterRoles(ctx context.Context, clientset *typedRbacv1.RbacV1Client, labelSelector string) ([]rbacv1.ClusterRole, error) {
+	listOpt := metav1.ListOptions{}
+	if len(labelSelector) > 0 {
+		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
+	}
+
+	clusterRoles, err := clientset.ClusterRoles().List(ctx, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return clusterRoles.Items, nil
+}
+
+// Get All Raw cluster role binding list
+func getAllRawClusterRoleBindings(ctx context.Context, clientset *typedRbacv1.RbacV1Client, labelSelector string) ([]rbacv1.ClusterRoleBinding, error) {
+	listOpt := metav1.ListOptions{}
+	if len(labelSelector) > 0 {
+		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
+	}
+
+	clusterRoleBindings, err := clientset.ClusterRoleBindings().List(ctx, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return clusterRoleBindings.Items, nil
+}
+
+
+// Get All Raw role list
+func getAllRawRoles(ctx context.Context, clientset *typedRbacv1.RbacV1Client, namespace string, labelSelector string) ([]rbacv1.Role, error) {
+	listOpt := metav1.ListOptions{}
+	if len(labelSelector) > 0 {
+		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
+	}
+
+	roles, err := clientset.Roles(namespace).List(ctx, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return roles.Items, nil
+}
+
+// Get All Raw rolebindings list
+func getAllRawRoleBindings(ctx context.Context, clientset *typedRbacv1.RbacV1Client, namespace string, labelSelector string) ([]rbacv1.RoleBinding, error) {
+	listOpt := metav1.ListOptions{}
+	if len(labelSelector) > 0 {
+		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
+	}
+
+	roleBindings, err := clientset.RoleBindings(namespace).List(ctx, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return roleBindings.Items, nil
+}
+
 // Get All Raw serviceaccount list
 func getAllRawServiceAccount(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.ServiceAccount, error) {
 	listOpt := metav1.ListOptions{}
@@ -518,40 +332,8 @@ func getAllRawServiceAccount(ctx context.Context, clientset *kubernetes.Clientse
 	return serviceaccounts.Items, nil
 }
 
-//Get All raw node list
-func _get_all_raw_node(clientset *kubernetes.Clientset, labelSelector string) []corev1.Node {
-	listOpt := metav1.ListOptions{}
-	if len(labelSelector) > 0 {
-		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
-	}
-
-	nodes, err := clientset.CoreV1().Nodes().List(context.Background(), listOpt)
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	return nodes.Items
-}
-
-
-
-//Get All node list
-func _get_node_list() {
-	//Get kubernetes Client
-	clientset := _get_k8s_client()
-
-	nodes := _get_all_raw_node(clientset, NO_STRING)
-	renderNodeListInfo(nodes)
-}
-
 //Retrive only node List for ssh
 func getNodeListForOption(clientset *kubernetes.Clientset) []string {
-	//Get kubernetes Client
-	if clientset == nil {
-		clientset = _get_k8s_client()
-	}
-
 	nodes, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		Red(err.Error())
@@ -564,7 +346,7 @@ func getNodeListForOption(clientset *kubernetes.Clientset) []string {
 		objectMeta := node.ObjectMeta
 		for _, nodeAddr := range nodeStatus.Addresses {
 			if nodeAddr.Type == "Hostname" {
-				labels := _create_label_for_option(objectMeta.Labels)
+				labels := createLabelForOption(objectMeta.Labels)
 				nodeList = append(nodeList, fmt.Sprintf("%s (%s)", nodeAddr.Address,labels))
 				break
 			}
@@ -575,7 +357,8 @@ func getNodeListForOption(clientset *kubernetes.Clientset) []string {
 	return nodeList
 }
 
-func _create_label_for_option(labels map[string]string) string  {
+//Create Label to display for options
+func createLabelForOption(labels map[string]string) string  {
 	ret := []string{}
 	LabelFilters := DEFAULT_NODE_LABEL_FILTERS
 
@@ -591,89 +374,6 @@ func _create_label_for_option(labels map[string]string) string  {
 	}
 
 	return strings.Join(ret, ",")
-}
-
-// Get All Service list
-func _get_service_list() {
-	//Get kubernetes Client
-	clientset := _get_k8s_client()
-
-	//Get namespace
-	namespace := _get_namespace()
-
-	//Get All Pods
-	services, err := clientset.CoreV1().Services(namespace).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
-	}
-
-	//Variable for all pods
-	var objectMeta metav1.ObjectMeta
-
-	table := _get_table_object()
-	table.SetHeader([]string{"NAME", "TYPE", "CLUSTER-IP", "EXTERNAL-IP", "PORT(S)", "ENDPOINT(S)", "AGE"})
-
-	//Get detailed information about Service
-	now := time.Now()
-	for _, service := range services.Items {
-		objectMeta = service.ObjectMeta
-
-		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
-
-		serviceSpec := service.Spec
-		serviceType := string(serviceSpec.Type)
-		ExternalIPs := serviceSpec.ExternalIPs
-
-		// Get Load Balancer Name for this
-		externalIP := ""
-		if serviceType == "LoadBalancer" {
-			externalIP = service.Status.LoadBalancer.Ingress[0].Hostname
-		} else if len(ExternalIPs) == 0 {
-			externalIP = "<None>"
-		}
-
-		// Get Listening Ports of Service
-		portString := ""
-		for _, port := range serviceSpec.Ports {
-			appPort := strconv.FormatInt(int64(port.Port), 10)
-			portString += appPort
-
-			if port.NodePort != 0 {
-				portString += (":" + _int32_to_string(port.NodePort) + "/TCP, ")
-			} else {
-				portString += "/TCP, "
-			}
-		}
-		portString = portString[:len(portString)-2]
-
-		// Convert Label Selector to string set
-		labelSelector := []string{}
-		if len(serviceSpec.Selector) > 0 {
-			for key, value := range serviceSpec.Selector {
-				labelSelector = append(labelSelector, key + "=" + value)
-			}
-		}
-
-		//Get All Pods with endpoint
-		pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), metav1.ListOptions{LabelSelector: strings.Join(labelSelector,",")})
-		if err != nil {
-			Red(err.Error())
-			os.Exit(1)
-		}
-
-		//Get Endpoints (Pods)
-		endpoints := []string{}
-		if len(pods.Items) > 0 {
-			for _, pod := range pods.Items {
-				podIP := pod.Status.PodIP
-				endpoints = append(endpoints, podIP)
-			}
-		}
-
-		table.Append([]string{objectMeta.Name, serviceType, serviceSpec.ClusterIP, externalIP, portString, strings.Join(endpoints, ","), duration})
-	}
-	table.Render()
 }
 
 // Select Pod and port before port forward
@@ -829,6 +529,90 @@ func renderSecretsListInfo(secrets []corev1.Secret) bool {
 		}
 
 		table.Append([]string{objectMeta.Name, string(secret.Type), strconv.Itoa(count), strings.Join(keyGroups, ","), duration})
+	}
+	table.Render()
+
+	return true
+}
+
+// Render Role list
+func renderRolesListInfo(roles []rbacv1.Role) bool {
+	if len(roles) <= 0 {
+		return false
+	}
+	// Table setup
+	table := table.GetTableObject()
+	table.SetHeader([]string{"Name", "AGE"})
+
+	now := time.Now()
+	for _, role := range roles {
+		objectMeta := role.ObjectMeta
+		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
+
+		table.Append([]string{objectMeta.Name, duration})
+	}
+	table.Render()
+
+	return true
+}
+
+// Render Role Binding list
+func renderRoleBindingsListInfo(roleBindings []rbacv1.RoleBinding) bool {
+	if len(roleBindings) <= 0 {
+		return false
+	}
+	// Table setup
+	table := table.GetTableObject()
+	table.SetHeader([]string{"Name", "AGE"})
+
+	now := time.Now()
+	for _, roleBinding := range roleBindings {
+		objectMeta := roleBinding.ObjectMeta
+		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
+
+		table.Append([]string{objectMeta.Name, duration})
+	}
+	table.Render()
+
+	return true
+}
+
+// Render Cluster Role list
+func renderClusterRolesListInfo(clusterRoles []rbacv1.ClusterRole) bool {
+	if len(clusterRoles) <= 0 {
+		return false
+	}
+	// Table setup
+	table := table.GetTableObject()
+	table.SetHeader([]string{"Name", "AGE"})
+
+	now := time.Now()
+	for _, clusterRole := range clusterRoles {
+		objectMeta := clusterRole.ObjectMeta
+		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
+
+		table.Append([]string{objectMeta.Name, duration})
+	}
+	table.Render()
+
+	return true
+}
+
+// Render Cluster Role Binding list
+func renderClusterRoleBindingsListInfo(clusterRoleBindings []rbacv1.ClusterRoleBinding) bool {
+	if len(clusterRoleBindings) <= 0 {
+		return false
+	}
+	// Table setup
+	table := table.GetTableObject()
+	table.SetHeader([]string{"Name", "AGE"})
+
+	now := time.Now()
+	for _, clusterRoleBinding := range clusterRoleBindings {
+		objectMeta := clusterRoleBinding.ObjectMeta
+		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
+
+		table.Append([]string{objectMeta.Name, duration})
 	}
 	table.Render()
 

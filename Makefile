@@ -13,4 +13,4 @@ clean:
 upload:
 	./${SCRIPT_FILE} ${VERSION}
 
-release: build upload clean
+all: build upload clean
