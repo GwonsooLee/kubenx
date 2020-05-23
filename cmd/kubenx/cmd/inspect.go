@@ -16,8 +16,20 @@ limitations under the License.
 package cmd
 
 import (
+	"io"
+	"context"
 	"github.com/spf13/cobra"
 )
+
+//Create Command for get pod
+func NewCmdInspect() *cobra.Command {
+	return NewCmd("inspect").
+		WithDescription("Inspect resource in detail").
+		AddSearchGroups().
+		SetAliases([]string{"ins"}).
+		AddInspectGroups().
+		RunWithNoArgs(execInsepct)
+}
 
 // inspectCmd represents the inspect command
 var inspectCmd = &cobra.Command{
@@ -28,3 +40,8 @@ var inspectCmd = &cobra.Command{
 	Aliases: []string{"ins"},
 }
 
+
+// Function for search execution
+func execInsepct(_ context.Context, out io.Writer) error {
+	return nil
+}

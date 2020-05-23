@@ -1,6 +1,5 @@
 package cmd
 
-
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/spf13/cobra"
@@ -51,7 +50,7 @@ var FlagRegistry = []Flag{
 		Value:         aws.String(NO_STRING),
 		DefValue:      "ap-northeast-2",
 		FlagAddMethod: "StringVar",
-		DefinedOn:     []string{"pod", "deployment", "service", "serviceaccount", "configmap", "ingress"},
+		DefinedOn:     []string{"pod", "deployment", "service", "serviceaccount", "configmap", "ingress", "cluster", "init"},
 	},
 	{
 		Name:          "all",

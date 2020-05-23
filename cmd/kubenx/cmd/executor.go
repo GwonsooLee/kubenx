@@ -1,17 +1,16 @@
 package cmd
 
 import (
-	"os"
 	"context"
-	"k8s.io/client-go/rest"
-	"github.com/spf13/viper"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 	"github.com/GwonsooLee/kubenx/pkg/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/spf13/viper"
+	"k8s.io/client-go/kubernetes"
 	v1beta1 "k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 type Executor struct {
 	Client 			*kubernetes.Clientset
@@ -77,8 +76,7 @@ func createNewExecutor() (Executor, error) {
 	// create the clientset
 	betav1clientset, err := v1beta1.NewForConfig(config)
 	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
+		return executor, err
 	}
 
 	executor.BetaV1Client = betav1clientset

@@ -35,6 +35,8 @@ var (
 func NewCmdCluster() *cobra.Command {
 	return NewCmd("cluster").
 		WithDescription("Cluster related command").
+		AddCommand(NewCmdInitCluster()).
+		SetFlags().
 		RunWithNoArgs(execCluster)
 }
 
@@ -42,7 +44,6 @@ func NewCmdCluster() *cobra.Command {
 func NewCmdGetCluster() *cobra.Command {
 	return NewCmd("cluster").
 		WithDescription("Get informaton about cluster").
-		AddCommand(NewCmdInitCluster()).
 		RunWithNoArgs(execGetCluster)
 }
 
@@ -56,14 +57,12 @@ func execGetCluster(ctx context.Context, out io.Writer) error {
 		// Check the cluster First
 		cluster, err := GetCurrentCluster()
 		if err != nil {
-			color.Red.Fprintln(out, err.Error())
 			return err
 		}
 
 		// 1. Get Cluster Information
 		clusterInfo, err := aws.GetClusterInfo(executor.EKS, cluster)
 		if err != nil {
-			color.Red.Fprintln(out, err.Error())
 			return err
 		}
 
@@ -78,7 +77,6 @@ func execGetCluster(ctx context.Context, out io.Writer) error {
 		// Get VPC Information
 		vpcInfo, err := aws.GetVPCInfo(executor.EC2, clusterInfo.Cluster.ResourcesVpcConfig.VpcId)
 		if err != nil {
-			color.Red.Fprintln(out, err.Error())
 			return err
 		}
 
@@ -105,7 +103,6 @@ func execGetCluster(ctx context.Context, out io.Writer) error {
 			//Get all subnet information
 			subnetInfo, err := aws.GetSubnetsInfo(executor.EC2, subnetIds)
 			if err != nil {
-				color.Red.Fprintln(out, err.Error())
 				return err
 			}
 
@@ -144,26 +141,16 @@ func NewCmdInitCluster() *cobra.Command {
 func execInitCluster(ctx context.Context, out io.Writer) error {
 	return runExecutorWithAWS(ctx, func(executor Executor) error {
 
-		// Print the description for initialization
-		color.Red.Fprintln(out, "******* Steps for initialization ********")
-		color.Yellow.Fprintln(out, "Step 1. Tag setup for VPC")
-		color.Yellow.Fprintln(out, "Step 2. Tag setup for public subnet")
-		color.Yellow.Fprintln(out, "Step 3. Tag setup for private subnet")
-		color.Yellow.Fprintln(out, "Step 4. Create Open ID Connector")
-		fmt.Println()
-
 		// Get Cluster Information First
 		// Check the cluster First
 		cluster, err := GetCurrentCluster()
 		if err != nil {
-			color.Red.Fprintln(out, err.Error())
 			return err
 		}
 
 		// 1. Get Cluster Information
 		clusterInfo, err := aws.GetClusterInfo(executor.EKS, cluster)
 		if err != nil {
-			color.Red.Fprintln(out, err.Error())
 			return err
 		}
 
@@ -171,19 +158,16 @@ func execInitCluster(ctx context.Context, out io.Writer) error {
 		vpcId := clusterInfo.Cluster.ResourcesVpcConfig.VpcId
 		subnetList, err := aws.GetSubnetListInVPC(executor.EC2, vpcId)
 		if err != nil {
-			color.Red.Fprintln(out, err.Error())
 			return err
 		}
 
 		if len(subnetList.Subnets) == 0 {
-			color.Red.Fprintln(out, fmt.Errorf("No subnet exists, please checkout out VPC"))
-			return err
+			return fmt.Errorf("No subnet exists, please checkout out VPC")
 		}
 
 		// 3. Get VPC Information
 		vpcInfo, err := aws.GetVPCInfo(executor.EC2, vpcId)
 		if err != nil {
-			color.Red.Fprintln(out, err.Error())
 			return err
 		}
 
@@ -196,6 +180,15 @@ func execInitCluster(ctx context.Context, out io.Writer) error {
 				hasVPCTag = true
 			}
 		}
+
+		// Print the description for initialization
+		color.Red.Fprintln(out, "******* Steps for initialization ********")
+		color.Yellow.Fprintln(out, "Step 1. Tag setup for VPC")
+		color.Yellow.Fprintln(out, "Step 2. Tag setup for public subnet")
+		color.Yellow.Fprintln(out, "Step 3. Tag setup for private subnet")
+		color.Yellow.Fprintln(out, "Step 4. Create Open ID Connector")
+		fmt.Println()
+
 
 		// Check the vpc tag is updated
 		if hasVPCTag {
@@ -257,7 +250,7 @@ func execInitCluster(ctx context.Context, out io.Writer) error {
 
 		// Add Tag if there is public subnet which doesn't have the necessary tags
 		if len(publicSubnetIds) > 0 {
-			Red("Step 2. Tags for Public Subnet needs to be updated")
+			color.Red.Fprintln(out, "Step 2. Tags for Public Subnet needs to be updated")
 			aws.UpdateSubnetsTagForCluster(executor.EC2, publicSubnetIds, cluster, "public")
 		} else {
 			Blue("Step 2. Tags for Public Subnet is already updated")
@@ -265,10 +258,10 @@ func execInitCluster(ctx context.Context, out io.Writer) error {
 
 		// Add Tag if there is private subnet which doesn't have the necessary tags
 		if len(privateSubnetIds) > 0 {
-			Red("Step 3. Tags for Private Subnet needs to be updated")
+			color.Red.Fprintln(out, "Step 3. Tags for Private Subnet needs to be updated")
 			aws.UpdateSubnetsTagForCluster(executor.EC2, privateSubnetIds, cluster, "private")
 		} else {
-			Blue("Step 3. Tags for Private Subnet is already updated")
+			color.Blue.Fprintln(out, "Step 3. Tags for Private Subnet is already updated")
 		}
 
 		// 5. OpenID Connector Check
@@ -279,7 +272,6 @@ func execInitCluster(ctx context.Context, out io.Writer) error {
 		} else if ret == aws.NEWLY_CREATED {
 			color.Red.Fprintln(out, "Step 4. New OIDC Provider is successfully created")
 		} else {
-			color.Red.Fprintln(out, err)
 			return err
 		}
 

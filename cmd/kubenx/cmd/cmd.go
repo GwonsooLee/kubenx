@@ -26,12 +26,11 @@ func NewKubenxCommand(out, err io.Writer) *cobra.Command {
 
 You can find more information in https://github.com/GwonsooLee/kubenx`,
 		SilenceErrors: true,
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Root().SilenceUsage = true
-
 			return nil
 		},
 	}
@@ -43,18 +42,19 @@ You can find more information in https://github.com/GwonsooLee/kubenx`,
 			Commands: []*cobra.Command{
 				NewCmdGet(),
 				NewCmdSearch(),
+				NewCmdInspect(),
 			},
 		},
 	}
 
 	groups.Add(rootCmd)
 
-	//rootCmd.AddCommand(NewCmdGet())
 	rootCmd.AddCommand(NewCmdPortForward())
 	rootCmd.AddCommand(NewCmdNamespace())
-	rootCmd.AddCommand(NewCmdGetCluster())
+	rootCmd.AddCommand(NewCmdCluster())
 	rootCmd.AddCommand(NewCmdCompletion())
 	rootCmd.AddCommand(NewCmdContext())
+	rootCmd.AddCommand(NewCmdVersion())
 
 	//templates.ActsAsRootCommand(rootCmd, nil, groups...)
 

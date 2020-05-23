@@ -13,6 +13,7 @@ type Builder interface {
 	AddCommand(cmd *cobra.Command) Builder
 	AddGetGroups() Builder
 	AddSearchGroups() Builder
+	AddInspectGroups() Builder
 	SetFlags() Builder
 	RunWithNoArgs(action func(context.Context, io.Writer) error) *cobra.Command
 	RunWithArgs(action func(context.Context, io.Writer, []string) error) *cobra.Command
@@ -94,12 +95,21 @@ func (b builder) AddGetGroups() Builder {
 	b.cmd.AddCommand(NewCmdGetCluster())
 	b.cmd.AddCommand(NewCmdGetIngress())
 	b.cmd.AddCommand(NewCmdGetNode())
+	b.cmd.AddCommand(NewCmdGetConfigMap())
+	b.cmd.AddCommand(NewCmdGetSecret())
+	b.cmd.AddCommand(NewCmdGetServiceAccount())
 	return b
 }
 
 // Add groups of commands for search command
 func (b builder) AddSearchGroups() Builder {
 	b.cmd.AddCommand(NewCmdSearchLabel())
+	return b
+}
+
+// Add groups of commands for search command
+func (b builder) AddInspectGroups() Builder {
+	b.cmd.AddCommand(NewCmdInspectNode())
 	return b
 }
 

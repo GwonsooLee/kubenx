@@ -17,6 +17,7 @@ var (
 	KUBENX_HOMEDIR = ".kubenx"
 	SSH_DEFAULT_PATH = "ssh"
 	TARGET_DEFAULT_PORT = "22"
+	AWS_IAM_ANNOTATION = "eks.amazonaws.com/role-arn"
 
 
 	//Color Definition

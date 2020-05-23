@@ -51,10 +51,9 @@ func execGetPod(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
 
 		// Get All Pods in current namespace
-		pods, err := getAllRawPods(executor.Client, executor.Namespace, NO_STRING)
+		pods, err := getAllRawPods(ctx, executor.Client, executor.Namespace, NO_STRING)
 		if err != nil {
-			color.Red.Fprintln(out, err)
-			os.Exit(1)
+			return err
 		}
 
 		if ! renderPodListInfo(pods) {
@@ -118,7 +117,7 @@ func execPortForward(ctx context.Context, out io.Writer) error {
 		go func() {
 			// PortForward the pod specified from its port 9090 to the local port
 			// 8080
-			err := _port_forward_to_pod(PortForwardAPodRequest{
+			err := portForwardToPod(PortForwardAPodRequest{
 				RestConfig: executor.Config,
 				Pod: corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{

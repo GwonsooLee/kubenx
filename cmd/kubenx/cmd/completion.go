@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"context"
 	"github.com/spf13/cobra"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"os"
 )
 
 const defaultBoilerPlate = `
@@ -50,19 +52,20 @@ func NewCmdCompletion() *cobra.Command {
 	return NewCmd("completion").
 		WithDescription("Generate bash/zsh completion script").
 		WithLongDescription(`To load completion run
-. <(kubenx completion)
+. <(kubenx completion zsh)
 
 To configure your bash shell to load completions for each session add to your bashrc
 
 # ~/.bashrc or ~/.profile
-. <(kubenx completion)
+. <(kubenx completion zsh)
 `		).
 		RunWithArgsAndCmd(execCompletion)
 }
 
 // Function for get command
 func execCompletion(_ context.Context, out io.Writer, cmd *cobra.Command, args []string) error {
-	err := RunCompletion(out, "", cmd, args)
+	ioStreams := genericclioptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr}
+	err := RunCompletion(ioStreams.Out, "", cmd, args)
 	CheckErr(err)
 
 	return err

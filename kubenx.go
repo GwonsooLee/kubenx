@@ -16,12 +16,12 @@ limitations under the License.
 package main
 
 import (
-	Logger "github.com/sirupsen/logrus"
 	"os"
 	"errors"
 	"context"
-	"github.com/GwonsooLee/kubenx/cmd/kubenx/app"
+	Logger "github.com/sirupsen/logrus"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/cmd/kubenx/app"
 )
 
 func main() {

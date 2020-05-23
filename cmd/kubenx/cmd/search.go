@@ -47,7 +47,6 @@ func execSearch(_ context.Context, out io.Writer) error {
 	return nil
 }
 
-
 // Function for search via label
 func execSearchLabel(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
@@ -89,7 +88,7 @@ func execSearchLabel(ctx context.Context, out io.Writer) error {
 
 		//Print pod
 		color.Yellow.Fprintln(out, "========Pod INFO=======")
-		pods, err := getAllRawPods(executor.Client, ALL_NAMESPACE, labelSelector)
+		pods, err := getAllRawPods(ctx, executor.Client, ALL_NAMESPACE, labelSelector)
 		if err != nil {
 			color.Red.Fprintln(out, err)
 			os.Exit(1)

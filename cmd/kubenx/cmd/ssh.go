@@ -241,7 +241,7 @@ func _get_target_instance_configuration() (string, string) {
 	//		break
 	//	}
 	//}
-	nodeList := _get_node_list_for_option(nil)
+	nodeList := getNodeListForOption(nil)
 
 	var server string
 	if len(nodeList) > 0 {

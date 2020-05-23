@@ -1,32 +1,33 @@
 package cmd
 
 import (
-	"k8s.io/client-go/tools/clientcmd/api"
-	"os"
-	"fmt"
-	"time"
-	"flag"
 	"context"
+	"flag"
+	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
-	"path/filepath"
+	"time"
 
-	"k8s.io/client-go/rest"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/transport/spdy"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/portforward"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	v1beta1 "k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
 
-	"github.com/spf13/viper"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
-	v1beta1 "k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
+	"github.com/GwonsooLee/kubenx/pkg/table"
+	"github.com/spf13/viper"
 )
 
 //Port Forward Request
@@ -458,18 +459,63 @@ func _get_deployment_list() {
 }
 
 // Get All Raw Pod list
-func getAllRawPods(clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Pod, error) {
+func getAllRawPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Pod, error) {
 	listOpt := metav1.ListOptions{}
 	if len(labelSelector) > 0 {
 		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
 	}
 
-	pods, err := clientset.CoreV1().Pods(namespace).List(context.Background(), listOpt)
+	pods, err := clientset.CoreV1().Pods(namespace).List(ctx, listOpt)
 	if err != nil {
 		return nil, err
 	}
 
 	return pods.Items, nil
+}
+
+// Get All Raw configmap list
+func getAllRawConfigMaps(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.ConfigMap, error) {
+	listOpt := metav1.ListOptions{}
+	if len(labelSelector) > 0 {
+		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
+	}
+
+	configMaps, err := clientset.CoreV1().ConfigMaps(namespace).List(ctx, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return configMaps.Items, nil
+}
+
+// Get All Raw secret list
+func getAllRawSecrets(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Secret, error) {
+	listOpt := metav1.ListOptions{}
+	if len(labelSelector) > 0 {
+		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
+	}
+
+	secrets, err := clientset.CoreV1().Secrets(namespace).List(ctx, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return secrets.Items, nil
+}
+
+// Get All Raw serviceaccount list
+func getAllRawServiceAccount(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.ServiceAccount, error) {
+	listOpt := metav1.ListOptions{}
+	if len(labelSelector) > 0 {
+		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
+	}
+
+	serviceaccounts, err := clientset.CoreV1().ServiceAccounts(namespace).List(ctx, listOpt)
+	if err != nil {
+		return nil, err
+	}
+
+	return serviceaccounts.Items, nil
 }
 
 //Get All raw node list
@@ -500,7 +546,7 @@ func _get_node_list() {
 }
 
 //Retrive only node List for ssh
-func _get_node_list_for_option(clientset *kubernetes.Clientset) []string {
+func getNodeListForOption(clientset *kubernetes.Clientset) []string {
 	//Get kubernetes Client
 	if clientset == nil {
 		clientset = _get_k8s_client()
@@ -674,7 +720,7 @@ func selectPodPortNS(options []string) (string, int, int) {
 }
 
 // Get PortForward Dialer
-func _port_forward_to_pod(req PortForwardAPodRequest) error {
+func portForwardToPod(req PortForwardAPodRequest) error {
 	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward",
 		req.Pod.Namespace, req.Pod.Name)
 	hostIP := strings.TrimLeft(req.RestConfig.Host, "htps:/")
@@ -693,17 +739,16 @@ func _port_forward_to_pod(req PortForwardAPodRequest) error {
 }
 
 // Get Node for inspect
-func _get_target_node(clientset *kubernetes.Clientset, args []string) string {
+func getTargetNode(clientset *kubernetes.Clientset, args []string) (string,error) {
 	// Pass from command
 	if len(args) == 1 {
-		return args[0]
+		return args[0], nil
 	}
 
-	options := _get_node_list_for_option(clientset)
+	options := getNodeListForOption(clientset)
 
 	if len(options) == 0 {
-		Red("No available node exists")
-		os.Exit(1)
+		return NO_STRING, fmt.Errorf("No node list")
 	}
 
 	var node string
@@ -715,52 +760,111 @@ func _get_target_node(clientset *kubernetes.Clientset, args []string) string {
 		survey.AskOne(prompt, &node)
 	}
 
-	return node
+	return strings.Split(node, " ")[0], nil
 }
 
-//Inspect node in detail
-func _inspect_node(args []string)  {
-	//Get kubernetes Client
-	clientset := _get_k8s_client()
-
-	//namespace
-	namespace := viper.GetString("namespace")
-
-	//get target node
-	target := _get_target_node(clientset, args)
-
-	// Get node information
-	detail, err := clientset.CoreV1().Nodes().Get(context.Background(), target, metav1.GetOptions{})
-	if err != nil {
-		Red(err.Error())
-		os.Exit(1)
+// Render ServiceAccount list
+func renderServiceAccountsListInfo(serviceaccounts []corev1.ServiceAccount) bool {
+	if len(serviceaccounts) <= 0 {
+		return false
 	}
+	// Table setup
+	table := table.GetTableObject()
+	table.SetHeader([]string{"NAME", "SECRET COUNT", "KEYS", "IAM ROLE", "AGE"})
 
-	taints := detail.Spec.Taints
+	now := time.Now()
+	for _, serviceaccount := range serviceaccounts {
+		var iamRole string
+		objectMeta := serviceaccount.ObjectMeta
+		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
 
-	Yellow("========Taint INFO=======")
-	for _, taint := range taints {
-		txt := fmt.Sprintf("%s=%s:%s", taint.Key, taint.Value, taint.Effect)
-		Blue(txt)
-	}
+		count := len(serviceaccount.Secrets)
+		keyGroups := []string{}
+		for _, secret := range serviceaccount.Secrets {
+			keyGroups = append(keyGroups, secret.Name)
 
-	if len(taints) == 0 {
-		Red("There is no taints applied")
-	}
-
-	//Get all pods
-	pods, _:= getAllRawPods(clientset, namespace, NO_STRING)
-
-	filtered := []corev1.Pod{}
-	for _, pod := range pods {
-		if pod.Spec.NodeName == target {
-			filtered = append(filtered, pod)
+			// Only shows first five secret keys
+			if len(keyGroups) == 5 {
+				break
+			}
 		}
-	}
 
-	fmt.Println()
-	Yellow("========POD INFO=======")
-	renderPodListInfo(filtered)
+		for key,value := range objectMeta.Annotations {
+			if key == AWS_IAM_ANNOTATION {
+				iamRole = strings.Split(value, "/")[1]
+				break
+			}
+		}
+
+		table.Append([]string{objectMeta.Name, strconv.Itoa(count), strings.Join(keyGroups, ","), iamRole, duration})
+	}
+	table.Render()
+
+	return true
+}
+
+// Render Secret list
+func renderSecretsListInfo(secrets []corev1.Secret) bool {
+	if len(secrets) <= 0 {
+		return false
+	}
+	// Table setup
+	table := table.GetTableObject()
+	table.SetHeader([]string{"Name", "TYPE", "DATA COUNT", "FIRST FIVE KEYS", "AGE"})
+
+	now := time.Now()
+	for _, secret := range secrets {
+		objectMeta := secret.ObjectMeta
+		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
+
+		count := len(secret.Data)
+		keyGroups := []string{}
+		for key, _ := range secret.Data {
+			keyGroups = append(keyGroups, key)
+
+			// Only shows first five secret keys
+			if len(keyGroups) == 5 {
+				break
+			}
+		}
+
+		table.Append([]string{objectMeta.Name, string(secret.Type), strconv.Itoa(count), strings.Join(keyGroups, ","), duration})
+	}
+	table.Render()
+
+	return true
+}
+
+// Render ConfigMap list
+func renderConfigMapsListInfo(configmaps []corev1.ConfigMap) bool {
+	if len(configmaps) <= 0 {
+		return false
+	}
+	// Table setup
+	table := table.GetTableObject()
+	table.SetHeader([]string{"Name", "DATA COUNT", "FIRST FIVE KEYS", "AGE"})
+
+	now := time.Now()
+	for _, configmap := range configmaps {
+		objectMeta := configmap.ObjectMeta
+		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
+
+		count := len(configmap.Data)
+		keyGroups := []string{}
+		for key, _ := range configmap.Data {
+			keyGroups = append(keyGroups, key)
+
+			// Only shows first five configmap keys
+			if len(keyGroups) == 5 {
+				break
+			}
+		}
+
+		table.Append([]string{objectMeta.Name, strconv.Itoa(count), strings.Join(keyGroups, ","), duration})
+	}
+	table.Render()
+
+	return true
 }
 
 // Render Pod list
@@ -769,7 +873,7 @@ func renderPodListInfo(pods []corev1.Pod) bool {
 		return false
 	}
 	// Table setup
-	table := _get_table_object()
+	table := table.GetTableObject()
 	table.SetHeader([]string{"Name", "READY", "STATUS", "Hostname", "Pod IP", "Host IP", "Node", "Age"})
 
 	now := time.Now()
@@ -823,7 +927,7 @@ func renderNodeListInfo(nodes []corev1.Node) bool {
 	now := time.Now()
 
 	// Table setup
-	table := _get_table_object()
+	table := table.GetTableObject()
 	table.SetHeader([]string{"NAME", "STATUS", "INTERNAL-IP", "EXTERNAL-IP", "LABEL", "OS-IMAGE", "AGE"})
 
 	//Get detailed information about Service

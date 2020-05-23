@@ -16,19 +16,24 @@ limitations under the License.
 package cmd
 
 import (
+	"io"
 	"fmt"
-
+	"context"
 	"github.com/spf13/cobra"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 )
 
-// versionCmd represents the version command
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Version Check",
-	Long:  `Version check`,
-	Run: func(cmd *cobra.Command, args []string) {
-		version := "v1.0.1"
-		fmt.Printf("Current Version is %s\n", version)
-	},
+
+//Create Command for get pod
+func NewCmdVersion() *cobra.Command {
+	return NewCmd("version").
+		WithDescription("Find kubenx release version").
+		RunWithNoArgs(execVersion)
 }
 
+// Function for search execution
+func execVersion(_ context.Context, out io.Writer) error {
+	version := "v1.0.2"
+	color.Blue.Fprintln(out, fmt.Sprintf("Current Version is %s\n", version))
+	return nil
+}

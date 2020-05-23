@@ -1,4 +1,4 @@
-archive
+bin
 *.gz
-archive/*.gz
+bin/*.gz
 release.sh
