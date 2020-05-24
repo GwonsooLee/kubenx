@@ -589,7 +589,7 @@ func renderPodListInfo(pods []corev1.Pod) bool {
 			}
 
 			if containerStatus.State.Terminated != nil {
-				status = fmt.Sprintf("%s (Exit Code: %d", containerStatus.State.Terminated.Reason, containerStatus.State.Terminated.ExitCode)
+				status = fmt.Sprintf("%s", containerStatus.State.Terminated.Reason)
 			}
 		}
 
