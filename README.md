@@ -11,7 +11,7 @@ $ gzip -d kubenx.tar.gz
 $ tar -xzvf kubenx.tar
 $ mv kubenx /usr/local/bin
 $ kubenx version
-Current Version is v1.0.0
+Current Version is v1.0.4
 ```
 <br>
 
@@ -23,6 +23,33 @@ echo "source <(kubenx completion bash)" >> ~/.bashrc
 # For zsh shell
 echo "source <(kubenx completion zsh)" >> ~/.zshrc
 ```
+
+## Multi-Account Context Change
+* If you use multiple eks cluster in multiple AWS Account, then you need to assume role to use kubenx.
+* Before using, it is `required` to set up a configuration in `$HOME/.kubenx/config`.
+    * `session_name` : Role name you want to use for assume. 
+    * `assume` : key-value mapping `<Account Alias> : < Assume Role ARN >` 
+    * `eks-assume-mapping` : key-value mapping `<Context> : <Account Alias>`
+* If you use `kubenx context`, then it will automatically copy assume credentials to clipboard according to the configuration.
+    * You should paste to shell by `Ctrl + v`
+```bash
+{
+  "session_name": "Role name you want assume from",
+  "assume": {
+    "dev" : "arn:aws:iam::22222:role/role-name",
+    "stg" : "arn:aws:iam::33333:role/role-name",
+    "prod" : "arn:aws:iam::11111:role/role-name",
+    "security" : "arn:aws:iam::44444:role/role-name"
+  },
+  "eks-assume-mapping": {
+    "eks-prod-apnortheast2": "prod",
+    "eks-dev-apnortheast2": "dev",
+    "eks-stg-apnortheast2": "stg",
+    "eks-security-apnortheast2": "prod",
+  }
+}
+```
+<br> 
 
 ## Change Context or Namespace
 ```bash

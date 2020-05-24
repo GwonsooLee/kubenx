@@ -33,7 +33,7 @@ func NewCmdVersion() *cobra.Command {
 
 // Function for search execution
 func execVersion(_ context.Context, out io.Writer) error {
-	version := "v1.0.3"
+	version := "v1.0.4"
 	color.Blue.Fprintln(out, fmt.Sprintf("Current Version is %s\n", version))
 	return nil
 }

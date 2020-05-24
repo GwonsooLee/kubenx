@@ -23,6 +23,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/aws"
+	"os/exec"
 )
 
 
@@ -41,7 +43,6 @@ func execContext(_ context.Context, out io.Writer, args []string) error {
 
 //Change Context
 func changeContext(out io.Writer, args []string) error {
-
 	var contextList []string
 	var newContext string
 
@@ -90,6 +91,47 @@ func changeContext(out io.Writer, args []string) error {
 
 	clientcmd.ModifyConfig(configAccess, *currentConfig, false)
 	color.Yellow.Fprintln(out, fmt.Sprintf("Context is changed to %s", newContext))
+
+	//Assume Role
+	kubeEKSConfig := aws.FindEKSAussmeInfo()
+
+	if _, ok := kubeEKSConfig.EKSAssumeMapping[newContext]; !ok {
+		color.Red.Fprintln(out, "Assume Information is not mapped to $HOME/.kubenx/config .")
+		return nil
+	}
+
+	assumeCreds := aws.AssumeRole(kubeEKSConfig.Assume[kubeEKSConfig.EKSAssumeMapping[newContext]], kubeEKSConfig.SessionName)
+
+	pbcopy := exec.Command("pbcopy")
+	in, _ := pbcopy.StdinPipe()
+
+	if err := pbcopy.Start(); err != nil {
+		return err
+	}
+
+	if _, err := in.Write([]byte(fmt.Sprintf("export AWS_ACCESS_KEY_ID=%s\n", *assumeCreds.AccessKeyId))); err != nil {
+		return err
+	}
+
+	if _, err := in.Write([]byte(fmt.Sprintf("export AWS_SECRET_ACCESS_KEY=%s\n", *assumeCreds.SecretAccessKey))); err != nil {
+		return err
+	}
+
+	if _, err := in.Write([]byte(fmt.Sprintf("export AWS_SESSION_TOKEN=%s\n", *assumeCreds.SessionToken))); err != nil {
+		return err
+	}
+
+	if err := in.Close(); err != nil {
+		return err
+	}
+
+	err = pbcopy.Wait()
+	if err != nil {
+		color.Red.Fprintln(out, err.Error())
+		return err
+	}
+
+	color.Blue.Fprintln(out, "Assume Credentials copied to clipboard, please paste it.")
 
 	return nil
 }

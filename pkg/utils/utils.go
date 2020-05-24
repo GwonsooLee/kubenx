@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"os"
 	"strconv"
 	"strings"
 )
@@ -18,3 +19,10 @@ func RemoveSHATags(image string) string {
 	return image
 }
 
+// Get Home Directory
+func HomeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.Getenv("USERPROFILE") // windows
+}

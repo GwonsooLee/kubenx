@@ -16,18 +16,18 @@ limitations under the License.
 package cmd
 
 import (
+	"io"
+	"fmt"
+	"strings"
 	"context"
 	"encoding/base64"
-	"fmt"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/GwonsooLee/kubenx/pkg/aws"
-	"github.com/GwonsooLee/kubenx/pkg/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io"
+	"github.com/AlecAivazis/survey/v2"
 	"k8s.io/client-go/tools/clientcmd"
+	"github.com/GwonsooLee/kubenx/pkg/aws"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"strings"
 )
 
 
@@ -56,7 +56,19 @@ func NewCmdConfigDelete() *cobra.Command {
 }
 
 // Function for Config execution
-func execConfig(_ context.Context, _ io.Writer) error {
+func execConfig(_ context.Context, out io.Writer) error {
+	// Get Current Config
+	configAccess := clientcmd.NewDefaultPathOptions()
+	config, err := configAccess.GetStartingConfig()
+	if err != nil {
+		return err
+	}
+
+	color.Blue.Fprintln(out, "[ Current available context ]")
+	for context, _ := range config.Contexts {
+		color.Green.Fprintln(out, context)
+	}
+
 	return nil
 }
 
