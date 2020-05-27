@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/spf13/viper"
 	"net/http"
 	"net/url"
 	"os"
@@ -369,9 +370,16 @@ func renderServiceAccountsListInfo(serviceaccounts []corev1.ServiceAccount) bool
 	if len(serviceaccounts) <= 0 {
 		return false
 	}
+
+	//Check Namespace
+	namespace, err := getNamespace()
+	if err != nil {
+		return false
+	}
+
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader([]string{"NAME", "SECRET COUNT", "KEYS", "IAM ROLE", "AGE"})
+	table.SetHeader(combineNamespace([]string{"NAME", "SECRET COUNT", "KEYS", "IAM ROLE", "AGE"}, true, namespace, NO_STRING))
 
 	now := time.Now()
 	for _, serviceaccount := range serviceaccounts {
@@ -397,7 +405,7 @@ func renderServiceAccountsListInfo(serviceaccounts []corev1.ServiceAccount) bool
 			}
 		}
 
-		table.Append([]string{objectMeta.Name, strconv.Itoa(count), strings.Join(keyGroups, ","), iamRole, duration})
+		table.Append(combineNamespace([]string{objectMeta.Name, strconv.Itoa(count), strings.Join(keyGroups, ","), iamRole, duration}, false, namespace, objectMeta.Namespace))
 	}
 	table.Render()
 
@@ -409,9 +417,16 @@ func renderSecretsListInfo(secrets []corev1.Secret) bool {
 	if len(secrets) <= 0 {
 		return false
 	}
+
+	//Check Namespace
+	namespace, err := getNamespace()
+	if err != nil {
+		return false
+	}
+
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader([]string{"Name", "TYPE", "DATA COUNT", "FIRST FIVE KEYS", "AGE"})
+	table.SetHeader(combineNamespace([]string{"Name", "TYPE", "DATA COUNT", "FIRST FIVE KEYS", "AGE"}, true, namespace, NO_STRING))
 
 	now := time.Now()
 	for _, secret := range secrets {
@@ -429,7 +444,7 @@ func renderSecretsListInfo(secrets []corev1.Secret) bool {
 			}
 		}
 
-		table.Append([]string{objectMeta.Name, string(secret.Type), strconv.Itoa(count), strings.Join(keyGroups, ","), duration})
+		table.Append(combineNamespace([]string{objectMeta.Name, string(secret.Type), strconv.Itoa(count), strings.Join(keyGroups, ","), duration}, false, namespace, objectMeta.Namespace))
 	}
 	table.Render()
 
@@ -441,16 +456,23 @@ func renderRolesListInfo(roles []rbacv1.Role) bool {
 	if len(roles) <= 0 {
 		return false
 	}
+
+	//Check Namespace
+	namespace, err := getNamespace()
+	if err != nil {
+		return false
+	}
+
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader([]string{"Name", "AGE"})
+	table.SetHeader(combineNamespace([]string{"Name", "AGE"}, true, namespace, NO_STRING))
 
 	now := time.Now()
 	for _, role := range roles {
 		objectMeta := role.ObjectMeta
 		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
 
-		table.Append([]string{objectMeta.Name, duration})
+		table.Append(combineNamespace([]string{objectMeta.Name, duration}, false, namespace, objectMeta.Namespace))
 	}
 	table.Render()
 
@@ -462,16 +484,23 @@ func renderRoleBindingsListInfo(roleBindings []rbacv1.RoleBinding) bool {
 	if len(roleBindings) <= 0 {
 		return false
 	}
+
+	//Check Namespace
+	namespace, err := getNamespace()
+	if err != nil {
+		return false
+	}
+
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader([]string{"Name", "AGE"})
+	table.SetHeader(combineNamespace([]string{"Name", "AGE"}, true, namespace, NO_STRING))
 
 	now := time.Now()
 	for _, roleBinding := range roleBindings {
 		objectMeta := roleBinding.ObjectMeta
 		duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
 
-		table.Append([]string{objectMeta.Name, duration})
+		table.Append(combineNamespace([]string{objectMeta.Name, duration}, false, namespace, objectMeta.Namespace))
 	}
 	table.Render()
 
@@ -525,9 +554,17 @@ func renderConfigMapsListInfo(configmaps []corev1.ConfigMap) bool {
 	if len(configmaps) <= 0 {
 		return false
 	}
+
+
+	//Check Namespace
+	namespace, err := getNamespace()
+	if err != nil {
+		return false
+	}
+
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader([]string{"Name", "DATA COUNT", "FIRST FIVE KEYS", "AGE"})
+	table.SetHeader(combineNamespace([]string{"Name", "DATA COUNT", "FIRST FIVE KEYS", "AGE"}, true, namespace, NO_STRING))
 
 	now := time.Now()
 	for _, configmap := range configmaps {
@@ -545,7 +582,7 @@ func renderConfigMapsListInfo(configmaps []corev1.ConfigMap) bool {
 			}
 		}
 
-		table.Append([]string{objectMeta.Name, strconv.Itoa(count), strings.Join(keyGroups, ","), duration})
+		table.Append(combineNamespace([]string{objectMeta.Name, strconv.Itoa(count), strings.Join(keyGroups, ","), duration}, false, namespace, objectMeta.Namespace))
 	}
 	table.Render()
 
@@ -557,9 +594,16 @@ func renderPodListInfo(pods []corev1.Pod) bool {
 	if len(pods) <= 0 {
 		return false
 	}
+
+	//Check Namespace
+	namespace, err := getNamespace()
+	if err != nil {
+		return false
+	}
+
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader([]string{"Name", "READY", "STATUS", "Hostname", "Pod IP", "Host IP", "Node", "Age"})
+	table.SetHeader(combineNamespace([]string{"Name", "READY", "STATUS", "Hostname", "Pod IP", "Host IP", "Node", "Age"}, true, namespace,  NO_STRING))
 
 	now := time.Now()
 	for _, pod := range pods {
@@ -593,13 +637,36 @@ func renderPodListInfo(pods []corev1.Pod) bool {
 			}
 		}
 
-		table.Append([]string{objectMeta.Name, strconv.Itoa(readyCount) + "/" + strconv.Itoa(totalCount), status, podSpec.Hostname, podStatus.PodIP, podStatus.HostIP, podSpec.NodeName, duration})
+
+		table.Append(combineNamespace([]string{objectMeta.Name, strconv.Itoa(readyCount) + "/" + strconv.Itoa(totalCount), status, podSpec.Hostname, podStatus.PodIP, podStatus.HostIP, podSpec.NodeName, duration}, false, namespace, objectMeta.Namespace))
 	}
 	table.Render()
 
 	return true
 }
 
+// Combine Namespace
+func combineNamespace(origin []string, header bool, namespace, target string) []string  {
+	if namespace != NO_STRING {
+		return origin
+	}
+
+	additionalHeader := []string{}
+	if namespace == NO_STRING {
+		additionalHeader = append(additionalHeader, "NAMESPACE")
+	}
+
+	additionalContents := []string{}
+	if namespace == NO_STRING {
+		additionalContents = append(additionalContents, target)
+	}
+
+	if header {
+		return append(additionalHeader, origin...)
+	}
+
+	return append(additionalContents, origin...)
+}
 
 // Render Pod list
 func renderNodeListInfo(nodes []corev1.Node) bool {
@@ -613,7 +680,7 @@ func renderNodeListInfo(nodes []corev1.Node) bool {
 
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader([]string{"NAME", "STATUS", "INTERNAL-IP", "EXTERNAL-IP", "LABEL", "OS-IMAGE", "AGE"})
+	table.SetHeader([]string{"NAME", "STATUS", "INTERNAL-IP", "EXTERNAL-IP", "LABEL", "VERSION", "OS-IMAGE", "AGE"})
 
 	//Get detailed information about Service
 	labelFilters := DEFAULT_NODE_LABEL_FILTERS
@@ -647,14 +714,38 @@ func renderNodeListInfo(nodes []corev1.Node) bool {
 			}
 		}
 
-		table.Append([]string{objectMeta.Name, status, internalIp, externalIp, strings.Join(labels,","), nodeStatus.NodeInfo.OSImage, duration})
+		table.Append([]string{objectMeta.Name, status, internalIp, externalIp, strings.Join(labels,","), nodeStatus.NodeInfo.KubeletVersion, nodeStatus.NodeInfo.OSImage, duration})
 	}
 	table.Render()
 
 	return true
 }
 
+//Get Namespace via flag
+func getNamespace() (string, error) {
+	//Check the flag
+	setAll := viper.GetBool("all")
+	namespace := viper.GetString("namespace")
 
+	// If no flag is given, then set current namespace
+	if len(namespace) <= 0 {
+		loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+		configOverrides := &clientcmd.ConfigOverrides{}
+		kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
+		current, _, err := clientcmd.ClientConfig.Namespace(kubeConfig)
+		if err != nil {
+			return NO_STRING, err
+		}
+
+		namespace = current
+	}
+
+	if setAll && namespace != NO_STRING {
+		namespace = NO_STRING
+	}
+
+	return namespace, nil
+}
 
 // Get Current Cluster
 func _get_current_cluster() string {

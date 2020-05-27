@@ -6,13 +6,12 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/spf13/viper"
 	"k8s.io/client-go/kubernetes"
 	v1beta1 "k8s.io/client-go/kubernetes/typed/extensions/v1beta1"
 	rbacv1 "k8s.io/client-go/kubernetes/typed/rbac/v1"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
+
 type Executor struct {
 	Client 			*kubernetes.Clientset
 	BetaV1Client 	*v1beta1.ExtensionsV1beta1Client
@@ -92,30 +91,16 @@ func createNewExecutor() (Executor, error) {
 
 	executor.RbacV1Client = rbacv1clientset
 
-	//Check the flag
-	setAll := viper.GetBool("all")
-	namespace := viper.GetString("namespace")
-
-	// If no flag is given, then set current namespace
-	if len(namespace) <= 0 {
-		loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-		configOverrides := &clientcmd.ConfigOverrides{}
-		kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
-		namespace, _, err = clientcmd.ClientConfig.Namespace(kubeConfig)
-		if err != nil {
-			return executor, err
-		}
-	}
-
-	if setAll && namespace != NO_STRING {
-		namespace = NO_STRING
+	//Get Namespace
+	namespace, err := getNamespace()
+	if err != nil {
+		return executor, err
 	}
 
 	executor.Namespace = namespace
 
 	return executor, err
 }
-
 
 // Run function without executor
 func runWithoutExecutor(ctx context.Context, action func() error) error {

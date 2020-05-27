@@ -4,6 +4,8 @@ go 1.14
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.0.7
+	github.com/apaxa-go/eval v0.0.0-20171223182326-1d18b251d679
+	github.com/apaxa-go/helper v0.0.0-20180607175117-61d31b1c31c3 // indirect
 	github.com/aws/aws-sdk-go v1.29.29
 	github.com/evanphx/json-patch v4.2.0+incompatible
 	github.com/fatih/color v1.9.0
@@ -30,5 +32,4 @@ require (
 	k8s.io/klog v1.0.0
 	k8s.io/kubectl v0.18.3
 	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
-	sigs.k8s.io/structured-merge-diff v0.0.0-20190525122527-15d366b2352e // indirect
 )
