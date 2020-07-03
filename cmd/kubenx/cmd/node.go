@@ -1,15 +1,14 @@
 package cmd
 
 import (
-	"fmt"
-	"io"
 	"context"
-	"github.com/spf13/cobra"
-	corev1 "k8s.io/api/core/v1"
+	"fmt"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/spf13/cobra"
+	"io"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
 
 //Create Command for get pod
 func NewCmdGetNode() *cobra.Command {
@@ -18,7 +17,6 @@ func NewCmdGetNode() *cobra.Command {
 		SetAliases([]string{"nodes"}).
 		RunWithNoArgs(execGetNode)
 }
-
 
 // Function for get command
 func execGetNode(ctx context.Context, out io.Writer) error {
@@ -34,12 +32,10 @@ func execGetNode(ctx context.Context, out io.Writer) error {
 			return nil
 		}
 
-
 		renderNodeListInfo(nodes.Items)
 		return err
 	})
 }
-
 
 //Create Command for get pod
 func NewCmdInspectNode() *cobra.Command {
@@ -66,7 +62,7 @@ func execInspectNode(ctx context.Context, out io.Writer) error {
 
 		taints := detail.Spec.Taints
 
-		color.Yellow.Fprintln(out,"========Taint INFO=======")
+		color.Yellow.Fprintln(out, "========Taint INFO=======")
 		for _, taint := range taints {
 			txt := fmt.Sprintf("%s=%s:%s", taint.Key, taint.Value, taint.Effect)
 			Blue(txt)
@@ -77,7 +73,7 @@ func execInspectNode(ctx context.Context, out io.Writer) error {
 		}
 
 		//Get all pods
-		pods, _:= getAllRawPods(ctx, executor.Client, executor.Namespace, NO_STRING)
+		pods, _ := getAllRawPods(ctx, executor.Client, executor.Namespace, NO_STRING)
 
 		filtered := []corev1.Pod{}
 		for _, pod := range pods {

@@ -1,15 +1,14 @@
 package cmd
 
 import (
-	"os"
-	"io"
-	"fmt"
 	"context"
-	"github.com/spf13/cobra"
+	"fmt"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/spf13/cobra"
+	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
 )
-
 
 //Create Command for get pod
 func NewCmdSearch() *cobra.Command {
@@ -67,7 +66,7 @@ func execSearchLabel(ctx context.Context, out io.Writer) error {
 			os.Exit(1)
 		}
 
-		if ! renderNodeListInfo(nodes.Items) {
+		if !renderNodeListInfo(nodes.Items) {
 			color.Red.Fprintln(out, "No node exists")
 		}
 		fmt.Println()
@@ -80,12 +79,10 @@ func execSearchLabel(ctx context.Context, out io.Writer) error {
 			os.Exit(1)
 		}
 
-		if ! renderPodListInfo(pods) {
+		if !renderPodListInfo(pods) {
 			color.Red.Fprintln(out, "No pod exists in the namespace")
 		}
 
 		return nil
 	})
 }
-
-

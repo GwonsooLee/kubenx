@@ -2,27 +2,26 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/fatih/color"
+	"github.com/olekukonko/tablewriter"
 	"os"
 	"reflect"
 	"strconv"
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/olekukonko/tablewriter"
 	"unsafe"
 )
 
 var (
-	ALL_NAMESPACE=""
-	NO_STRING=""
-	DEFAULT_NODE_LABEL_FILTERS=[]string{"app", "env"}
+	ALL_NAMESPACE              = ""
+	NO_STRING                  = ""
+	DEFAULT_NODE_LABEL_FILTERS = []string{"app", "env"}
 	//STATIS VALUE
-	KUBENX_HOMEDIR 		= ".kubenx"
-	SSH_DEFAULT_PATH 	= "ssh"
+	KUBENX_HOMEDIR      = ".kubenx"
+	SSH_DEFAULT_PATH    = "ssh"
 	TARGET_DEFAULT_PORT = "22"
-	AWS_IAM_ANNOTATION 	= "eks.amazonaws.com/role-arn"
-	AUTH_API_VERSION 	= "client.authentication.k8s.io/v1alpha1"
-	AUTH_COMMAND		= "aws"
-
+	AWS_IAM_ANNOTATION  = "eks.amazonaws.com/role-arn"
+	AUTH_API_VERSION    = "client.authentication.k8s.io/v1alpha1"
+	AUTH_COMMAND        = "aws"
 
 	//Color Definition
 	Red    = color.New(color.FgRed).PrintlnFunc()

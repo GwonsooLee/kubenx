@@ -2,8 +2,8 @@ package app
 
 import (
 	"context"
-	"io"
 	"github.com/GwonsooLee/kubenx/cmd/kubenx/cmd"
+	"io"
 )
 
 func Run(out, stderr io.Writer) error {

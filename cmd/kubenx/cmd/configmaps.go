@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"github.com/GwonsooLee/kubenx/pkg/color"
-	"io"
 	"context"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 	"github.com/spf13/cobra"
+	"io"
 )
 
 //Create Command for get pod
@@ -15,7 +15,6 @@ func NewCmdGetConfigMap() *cobra.Command {
 		RunWithNoArgs(execGetConfigMap)
 }
 
-
 // Function for get command
 func execGetConfigMap(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
@@ -24,11 +23,10 @@ func execGetConfigMap(ctx context.Context, out io.Writer) error {
 		if err != nil {
 			return err
 		}
-		if ! renderConfigMapsListInfo(configMaps) {
+		if !renderConfigMapsListInfo(configMaps) {
 			color.Red.Fprintln(out, "No configmap exists in the namespace")
 		}
 
 		return nil
 	})
 }
-

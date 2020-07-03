@@ -1,8 +1,8 @@
 package table
 
 import (
-	"os"
 	"github.com/olekukonko/tablewriter"
+	"os"
 )
 
 // Get Table

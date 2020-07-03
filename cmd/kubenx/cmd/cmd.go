@@ -15,7 +15,6 @@ var (
 	cfgFile string
 )
 
-
 //Get New Kubenx Command
 func NewKubenxCommand(out, err io.Writer) *cobra.Command {
 	cobra.OnInitialize(initConfig)
@@ -26,7 +25,7 @@ func NewKubenxCommand(out, err io.Writer) *cobra.Command {
 
 You can find more information in https://github.com/GwonsooLee/kubenx`,
 		SilenceErrors: true,
-		SilenceUsage: true,
+		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},

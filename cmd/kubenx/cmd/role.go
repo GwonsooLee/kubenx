@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"github.com/GwonsooLee/kubenx/pkg/color"
-	"io"
 	"context"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 	"github.com/spf13/cobra"
+	"io"
 )
 
 //Create Command for get pod
@@ -15,7 +15,6 @@ func NewCmdGetRole() *cobra.Command {
 		RunWithNoArgs(execGetRole)
 }
 
-
 // Function for get command
 func execGetRole(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
@@ -25,11 +24,10 @@ func execGetRole(ctx context.Context, out io.Writer) error {
 			return err
 		}
 
-		if ! renderRolesListInfo(roles) {
+		if !renderRolesListInfo(roles) {
 			color.Red.Fprintln(out, "No role exists in the namespace")
 		}
 
 		return nil
 	})
 }
-

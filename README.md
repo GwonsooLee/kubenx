@@ -83,116 +83,6 @@ Namespace is changed to "kube-system"
 ``` 
 <br>
 
-
-## Kubectl VS kubenx
-### 1. Get Current Pod
-Kubectl Command
-```bash
-$ kubectl get pod
-NAME                                READY   STATUS    RESTARTS   AGE
-nginx-deployment-56f8998dbc-5jvhr   1/1     Running   0          8m15s
-nginx-deployment-56f8998dbc-p8xnw   1/1     Running   0          8m14s
-nginx-deployment-56f8998dbc-pz4b2   1/1     Running   0          8m46s
-web-0                               0/1     Pending   0          8m40s
-```
-
-Kubenx Command
-- You can see `Pod IP`, `Host IP`, and `the node it is scheduled`.
-```bash
-$ kubenx get pod
-  NAME                               READY  STATUS   HOSTNAME  POD IP      HOST IP       NODE            AGE
-  nginx-deployment-56f8998dbc-5jvhr  1/1    Running            10.1.0.171  192.168.65.3  docker-desktop  8m33s
-  nginx-deployment-56f8998dbc-p8xnw  1/1    Running            10.1.0.172  192.168.65.3  docker-desktop  8m32s
-  nginx-deployment-56f8998dbc-pz4b2  1/1    Running            10.1.0.170  192.168.65.3  docker-desktop  9m4s
-  web-0                              0/0    Pending  web-0                                               8m58s
-``` 
-<br>
-
-### 2. Get Current Service
-Kubectl Command
-```bash
-$ kubectl get service
-NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
-kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   4d8h
-nginx        ClusterIP   None         <none>        80/TCP    8m31s
-```
-
-Kubenx Command
-- You can find `endpoint list` which the service is routing to.
-```bash
-$ kubenx get service
-  NAME        TYPE       CLUSTER-IP  EXTERNAL-IP  PORT(S)  ENDPOINT(S)                        AGE
-  kubernetes  ClusterIP  10.96.0.1   <None>       443/TCP  10.1.0.171,10.1.0.172,10.1.0.170,  4d8h
-  nginx       ClusterIP  None        <None>       80/TCP   10.1.0.171,10.1.0.172,10.1.0.170,  8m7s
-``` 
-<br>
-
-### 3. Get Current Deployment
-Kubectl Command
-```bash
-$ kubectl get deployment
-NAME               READY   UP-TO-DATE   AVAILABLE   AGE
-nginx-deployment   3/3     3            3           14m
-```
-
-Kubenx Command
-- You can find the `deployment strategy` and the configurations about it.
-```bash
-$ kubenx get deployment
-  NAME              READY  UP-TO-DATE  AVAILABLE  STRATEGY TYPE  MAXUNAVAILABLE  MAXSURGE  CONTAINERS  IMAGE        AGE
-  nginx-deployment  3      3           3          RollingUpdate  25%             25%       nginx       nginx:1.9.1  14m
-``` 
-<br>
-
-### 4. Get Current Ingress
-Kubectl Command
-```bash
-$ kubectl get ingresses.
-NAME            HOSTS   ADDRESS   PORTS   AGE
-ingress-nginx   *                 80      7m53s
-```
-
-Kubenx Command
-- All ports and paths are shown.
-- You can see `target service` in the list.
-```bash
-$ kubenx get ingress
-  NAME           HOST  ADDRESS  PATH  PORTS  TARGET SERVICE  AGE
-  ingress-nginx  *              /*    80     service-nginx   7m48s
-``` 
-<br>
-
-### 5. Port Forward
-Kubectl Command
-```bash
-$ kubectl get pods 
-NAME                     READY   STATUS    RESTARTS   AGE
-nginx-5578584966-czg6j   1/1     Running   0          100m
-
-$ kubectl port-forward nginx-5578584966-czg6j 8099:80
-Forwarding from 127.0.0.1:8099 -> 80
-Forwarding from [::1]:8099 -> 80
-
-```
-
-Kubenx Command
-- You are able to choose pod from terminal.
-- You can cancel anytime via `<Ctrl> + c`.
-- Default pod port is the local port you choose.
-```bash
-$ kubenx port-forward
-? Choose a pod:  [Use arrows to move, type to filter]
-> nginx-5578584966-czg6j
-
-? Choose a pod: nginx-5578584966-czg6j
-? Local port to use: 8080
-? Pod port[ Default: 8080]: 80
-Forwarding from 127.0.0.1:8080 -> 80
-Forwarding from [::1]:8080 -> 80
-Port forwarding is ready to get traffic. have fun!
-``` 
-<br>
-
 ## Only Kubenx can do
 ### 1. Inspect Node information
 * If you want to get detail information about node, you can use this command
@@ -330,3 +220,114 @@ $ kubenx get nodegroup
   AUTOSCALING GROUP                         INSTANCE ID          HEALTH STATUS  INSTANCE TYPE  AVAILABILITY ZONE
   eks-d8b88e2f-75c2-03c4-6c99-b54b6ad02312  i-041412f0s19f24b1b  Healthy        t3.small       ap-northeast-2c
 ```
+
+
+## Kubectl VS kubenx
+### 1. Get Current Pod
+Kubectl Command
+```bash
+$ kubectl get pod
+NAME                                READY   STATUS    RESTARTS   AGE
+nginx-deployment-56f8998dbc-5jvhr   1/1     Running   0          8m15s
+nginx-deployment-56f8998dbc-p8xnw   1/1     Running   0          8m14s
+nginx-deployment-56f8998dbc-pz4b2   1/1     Running   0          8m46s
+web-0                               0/1     Pending   0          8m40s
+```
+
+Kubenx Command
+- You can see `Pod IP`, `Host IP`, and `the node it is scheduled`.
+```bash
+$ kubenx get pod
+  NAME                               READY  STATUS   HOSTNAME  POD IP      HOST IP       NODE            AGE
+  nginx-deployment-56f8998dbc-5jvhr  1/1    Running            10.1.0.171  192.168.65.3  docker-desktop  8m33s
+  nginx-deployment-56f8998dbc-p8xnw  1/1    Running            10.1.0.172  192.168.65.3  docker-desktop  8m32s
+  nginx-deployment-56f8998dbc-pz4b2  1/1    Running            10.1.0.170  192.168.65.3  docker-desktop  9m4s
+  web-0                              0/0    Pending  web-0                                               8m58s
+``` 
+<br>
+
+### 2. Get Current Service
+Kubectl Command
+```bash
+$ kubectl get service
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   4d8h
+nginx        ClusterIP   None         <none>        80/TCP    8m31s
+```
+
+Kubenx Command
+- You can find `endpoint list` which the service is routing to.
+```bash
+$ kubenx get service
+  NAME        TYPE       CLUSTER-IP  EXTERNAL-IP  PORT(S)  ENDPOINT(S)                        AGE
+  kubernetes  ClusterIP  10.96.0.1   <None>       443/TCP  10.1.0.171,10.1.0.172,10.1.0.170,  4d8h
+  nginx       ClusterIP  None        <None>       80/TCP   10.1.0.171,10.1.0.172,10.1.0.170,  8m7s
+``` 
+<br>
+
+### 3. Get Current Deployment
+Kubectl Command
+```bash
+$ kubectl get deployment
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+nginx-deployment   3/3     3            3           14m
+```
+
+Kubenx Command
+- You can find the `deployment strategy` and the configurations about it.
+```bash
+$ kubenx get deployment
+  NAME              READY  UP-TO-DATE  AVAILABLE  STRATEGY TYPE  MAXUNAVAILABLE  MAXSURGE  CONTAINERS  IMAGE        AGE
+  nginx-deployment  3      3           3          RollingUpdate  25%             25%       nginx       nginx:1.9.1  14m
+``` 
+<br>
+
+### 4. Get Current Ingress
+Kubectl Command
+```bash
+$ kubectl get ingresses.
+NAME            HOSTS   ADDRESS   PORTS   AGE
+ingress-nginx   *                 80      7m53s
+```
+
+Kubenx Command
+- All ports and paths are shown.
+- You can see `target service` in the list.
+```bash
+$ kubenx get ingress
+  NAME           HOST  ADDRESS  PATH  PORTS  TARGET SERVICE  AGE
+  ingress-nginx  *              /*    80     service-nginx   7m48s
+``` 
+<br>
+
+### 5. Port Forward
+Kubectl Command
+```bash
+$ kubectl get pods 
+NAME                     READY   STATUS    RESTARTS   AGE
+nginx-5578584966-czg6j   1/1     Running   0          100m
+
+$ kubectl port-forward nginx-5578584966-czg6j 8099:80
+Forwarding from 127.0.0.1:8099 -> 80
+Forwarding from [::1]:8099 -> 80
+
+```
+
+Kubenx Command
+- You are able to choose pod from terminal.
+- You can cancel anytime via `<Ctrl> + c`.
+- Default pod port is the local port you choose.
+```bash
+$ kubenx port-forward
+? Choose a pod:  [Use arrows to move, type to filter]
+> nginx-5578584966-czg6j
+
+? Choose a pod: nginx-5578584966-czg6j
+? Local port to use: 8080
+? Pod port[ Default: 8080]: 80
+Forwarding from 127.0.0.1:8080 -> 80
+Forwarding from [::1]:8080 -> 80
+Port forwarding is ready to get traffic. have fun!
+``` 
+<br>
+

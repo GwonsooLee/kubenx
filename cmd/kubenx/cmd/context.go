@@ -1,17 +1,16 @@
 package cmd
 
 import (
-	"io"
-	"fmt"
 	"context"
-	"github.com/spf13/cobra"
-	"k8s.io/client-go/tools/clientcmd"
+	"fmt"
 	"github.com/AlecAivazis/survey/v2"
-	"github.com/GwonsooLee/kubenx/pkg/color"
 	"github.com/GwonsooLee/kubenx/pkg/aws"
+	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/spf13/cobra"
+	"io"
+	"k8s.io/client-go/tools/clientcmd"
 	"os/exec"
 )
-
 
 //Create Command for get pod
 func NewCmdContext() *cobra.Command {
@@ -78,7 +77,10 @@ func changeContext(out io.Writer, args []string) error {
 	color.Yellow.Fprintln(out, fmt.Sprintf("Context is changed to %s", newContext))
 
 	//Assume Role
-	kubeEKSConfig := aws.FindEKSAussmeInfo()
+	kubeEKSConfig, err := aws.FindEKSAussmeInfo()
+	if err != nil {
+		return err
+	}
 
 	if _, ok := kubeEKSConfig.EKSAssumeMapping[newContext]; !ok {
 		color.Red.Fprintln(out, "Assume Information is not mapped to $HOME/.kubenx/config .")

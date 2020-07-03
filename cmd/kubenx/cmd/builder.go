@@ -1,4 +1,3 @@
-
 package cmd
 
 import (
@@ -64,7 +63,7 @@ func (b builder) RunWithNoArgs(function func(context.Context, io.Writer) error) 
 
 // Run command with extra arguments
 func (b builder) RunWithArgs(function func(context.Context, io.Writer, []string) error) *cobra.Command {
-	b.cmd.RunE = func(_*cobra.Command, args []string) error {
+	b.cmd.RunE = func(_ *cobra.Command, args []string) error {
 		return returnErrorFromFunction(function(b.cmd.Context(), b.cmd.OutOrStderr(), args))
 	}
 	return &b.cmd
@@ -124,6 +123,7 @@ func (b builder) AddInspectGroups() Builder {
 func (b builder) AddConfigGroups() Builder {
 	b.cmd.AddCommand(NewCmdConfigDelete())
 	b.cmd.AddCommand(NewCmdConfigUpdate())
+	b.cmd.AddCommand(NewCmdConfigInit())
 	return b
 }
 

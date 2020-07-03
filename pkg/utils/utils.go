@@ -12,7 +12,7 @@ func Int32ToString(num int32) string {
 }
 
 func RemoveSHATags(image string) string {
-	if strings.Contains(image,"@") {
+	if strings.Contains(image, "@") {
 		return image[0:strings.Index(image, "@")]
 	}
 

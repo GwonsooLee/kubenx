@@ -13,20 +13,20 @@ import (
 )
 
 type Executor struct {
-	Client 			*kubernetes.Clientset
-	BetaV1Client 	*v1beta1.ExtensionsV1beta1Client
-	RbacV1Client 	*rbacv1.RbacV1Client
-	EKS 			*eks.EKS
-	EC2 			*ec2.EC2
-	IAM 			*iam.IAM
-	Config 			*rest.Config
-	Namespace 		string
-	Context   		context.Context
+	Client       *kubernetes.Clientset
+	BetaV1Client *v1beta1.ExtensionsV1beta1Client
+	RbacV1Client *rbacv1.RbacV1Client
+	EKS          *eks.EKS
+	EC2          *ec2.EC2
+	IAM          *iam.IAM
+	Config       *rest.Config
+	Namespace    string
+	Context      context.Context
 }
 
 // Run executor for command line
 func runExecutor(ctx context.Context, action func(Executor) error) error {
-	executor, err:= createNewExecutor()
+	executor, err := createNewExecutor()
 	if err != nil {
 		return err
 	}
@@ -39,18 +39,31 @@ func runExecutor(ctx context.Context, action func(Executor) error) error {
 
 // Run executor for command line
 func runExecutorWithAWS(ctx context.Context, action func(Executor) error) error {
-	executor, err:= createNewExecutor()
+	executor, err := createNewExecutor()
 	if err != nil {
 		return err
 	}
 
 	//Set AWS sessions
-	executor.EKS = aws.GetEksSession()
-	executor.EC2 = aws.GetEC2Session()
-	executor.IAM = aws.GetIAMSession()
+	executor.EKS = aws.GetEksSession(nil)
+	executor.EC2 = aws.GetEC2Session(nil)
+	executor.IAM = aws.GetIAMSession(nil)
 
 	//Run function with executor
 	err = action(executor)
+
+	return alwaysSucceedWhenCancelled(ctx, err)
+}
+
+// run AWS with assume
+func runExecutorWithAWSAssume(ctx context.Context, assumeRoleList []string, action func(Executor, []string) error) error {
+	executor, err := createNewExecutor()
+	if err != nil {
+		return err
+	}
+
+	//Run function with executor
+	err = action(executor, assumeRoleList)
 
 	return alwaysSucceedWhenCancelled(ctx, err)
 }
@@ -81,7 +94,6 @@ func createNewExecutor() (Executor, error) {
 	}
 
 	executor.BetaV1Client = betav1clientset
-
 
 	// create the rbac client
 	rbacv1clientset, err := rbacv1.NewForConfig(config)

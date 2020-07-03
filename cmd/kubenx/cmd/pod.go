@@ -41,14 +41,13 @@ func execGetPod(ctx context.Context, out io.Writer) error {
 			return err
 		}
 
-		if ! renderPodListInfo(pods) {
+		if !renderPodListInfo(pods) {
 			color.Red.Fprintln(out, "No pod exists in the namespace")
 		}
 
 		return nil
 	})
 }
-
 
 // Function for port forward
 func execPortForward(ctx context.Context, out io.Writer) error {

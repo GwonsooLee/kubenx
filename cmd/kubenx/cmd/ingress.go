@@ -1,16 +1,16 @@
 package cmd
 
 import (
-	"io"
-	"time"
 	"context"
-	"strings"
-	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/duration"
 	"github.com/GwonsooLee/kubenx/pkg/color"
-	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/GwonsooLee/kubenx/pkg/table"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
+	"github.com/spf13/cobra"
+	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/duration"
+	"strings"
+	"time"
 )
 
 //Create Command for get service
@@ -71,6 +71,3 @@ func execGetIngress(ctx context.Context, out io.Writer) error {
 		return nil
 	})
 }
-
-
-

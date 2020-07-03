@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"encoding/json"
+	"github.com/AlecAivazis/survey/v2"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"
@@ -8,16 +10,14 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"encoding/json"
 	"path/filepath"
-	"github.com/AlecAivazis/survey/v2"
 )
 
 // sshCmd represents the ssh command
 var sshCmd = &cobra.Command{
 	Use:   "ssh",
 	Short: "ssh to specific node",
-	Long: `ssh to specific node`,
+	Long:  `ssh to specific node`,
 	Run: func(cmd *cobra.Command, args []string) {
 		argsLen := len(args)
 
@@ -43,9 +43,9 @@ type SSHClient struct {
 
 // SSH Configuration
 type SSHConfig struct {
-	addr string
-	port string
-	user string
+	addr    string
+	port    string
+	user    string
 	keyfile string
 }
 
@@ -56,11 +56,11 @@ type Bastion struct {
 
 //Server Configuration
 type Server struct {
-	Key         string `json:"key"`
-	Addr   		string `json:"addr"`
-	Port   		string `json:"port"`
-	User   		string `json:"user"`
-	KeyFile   	string `json:"keyfile"`
+	Key     string `json:"key"`
+	Addr    string `json:"addr"`
+	Port    string `json:"port"`
+	User    string `json:"user"`
+	KeyFile string `json:"keyfile"`
 }
 
 // Terminal Configuration
@@ -89,8 +89,6 @@ func (c *SSHClient) Terminal(config *TerminalConfig) *remoteShell {
 		requestPty:     true,
 	}
 }
-
-
 
 // Start start a remote shell on client
 func (rs *remoteShell) Start(hostname string) error {
@@ -146,7 +144,6 @@ func (rs *remoteShell) Start(hostname string) error {
 		}
 	}
 
-
 	if err := session.Shell(); err != nil {
 		return err
 	}
@@ -161,7 +158,7 @@ func (rs *remoteShell) Start(hostname string) error {
 }
 
 // Try to access remote SSH
-func _try_remote_ssh(key string)  {
+func _try_remote_ssh(key string) {
 	//Get SSH Configuration
 	sshConfig := _get_ssh_configuration(key)
 
@@ -174,12 +171,12 @@ func _try_remote_ssh(key string)  {
 	}
 
 	// with a terminal config
-	config := &TerminalConfig {
-		Term: "xterm-256color",
+	config := &TerminalConfig{
+		Term:   "xterm-256color",
 		Height: 40,
 		Weight: 80,
-		Modes: ssh.TerminalModes {
-			ssh.ECHO: 1, // echo disabled
+		Modes: ssh.TerminalModes{
+			ssh.ECHO:          1,     // echo disabled
 			ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
 			ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
 		},
@@ -262,7 +259,7 @@ func _get_ssh_configuration(key string) *SSHConfig {
 
 	// Get Server Information of server[key]
 	var addr, port, user, keyfile string
-    for _, server := range bastion.Servers {
+	for _, server := range bastion.Servers {
 		if key == server.Key {
 			addr = server.Addr
 			port = server.Port
@@ -275,9 +272,9 @@ func _get_ssh_configuration(key string) *SSHConfig {
 
 	// Make sshConfig
 	sshConfig := &SSHConfig{
-		addr: addr,
-		port: port,
-		user: user,
+		addr:    addr,
+		port:    port,
+		user:    user,
 		keyfile: filepath.Join(homeDir(), ".ssh", keyfile),
 	}
 

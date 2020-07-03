@@ -1,15 +1,15 @@
 package cmd
 
 import (
-	"io"
-	"time"
 	"context"
-	"github.com/spf13/cobra"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 	"github.com/GwonsooLee/kubenx/pkg/table"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
+	"github.com/spf13/cobra"
+	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
-	"github.com/GwonsooLee/kubenx/pkg/color"
-	"github.com/GwonsooLee/kubenx/pkg/utils"
+	"time"
 )
 
 //Create Command for get service
@@ -87,7 +87,9 @@ func execGetDeployment(ctx context.Context, out io.Writer) error {
 					}
 				}
 
-				if hasValue { continue}
+				if hasValue {
+					continue
+				}
 
 				spec := deployment.Spec
 				duration := duration.HumanDuration(now.Sub(objectMeta.CreationTimestamp.Time))
@@ -115,11 +117,10 @@ func execGetDeployment(ctx context.Context, out io.Writer) error {
 
 		// If Error count is larger than 1, which means no deployment int the cluster
 		if errorCount > 1 {
-			color.Red.Fprintln(out,"The server could not find the requested resource")
+			color.Red.Fprintln(out, "The server could not find the requested resource")
 			return err
 		}
 		table.Render()
 		return nil
 	})
 }
-

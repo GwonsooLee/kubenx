@@ -3,8 +3,8 @@ package color
 import (
 	"fmt"
 	"github.com/fatih/color"
-	"strings"
 	"io"
+	"strings"
 )
 
 type Color struct {
@@ -13,7 +13,7 @@ type Color struct {
 
 var (
 	//Color Definition
-	Red    = Color{color: color.New(color.FgRed) }
+	Red    = Color{color: color.New(color.FgRed)}
 	Blue   = Color{color: color.New(color.FgBlue)}
 	Green  = Color{color: color.New(color.FgGreen)}
 	Yellow = Color{color: color.New(color.FgYellow)}

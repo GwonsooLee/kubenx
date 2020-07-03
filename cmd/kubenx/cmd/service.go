@@ -1,20 +1,19 @@
 package cmd
 
 import (
-	"fmt"
-	"io"
-	"time"
-	"strconv"
-	"strings"
 	"context"
-	"github.com/spf13/cobra"
+	"fmt"
 	"github.com/GwonsooLee/kubenx/pkg/color"
 	"github.com/GwonsooLee/kubenx/pkg/table"
 	"github.com/GwonsooLee/kubenx/pkg/utils"
+	"github.com/spf13/cobra"
+	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
+	"strconv"
+	"strings"
+	"time"
 )
-
 
 //Create Command for get service
 func NewCmdGetService() *cobra.Command {
@@ -74,12 +73,12 @@ func execGetService(ctx context.Context, out io.Writer) error {
 			labelSelector := []string{}
 			if len(serviceSpec.Selector) > 0 {
 				for key, value := range serviceSpec.Selector {
-					labelSelector = append(labelSelector, key + "=" + value)
+					labelSelector = append(labelSelector, key+"="+value)
 				}
 			}
 
 			//Get All Pods with endpoint
-			pods, err := executor.Client.CoreV1().Pods(executor.Namespace).List(ctx, metav1.ListOptions{LabelSelector: strings.Join(labelSelector,",")})
+			pods, err := executor.Client.CoreV1().Pods(executor.Namespace).List(ctx, metav1.ListOptions{LabelSelector: strings.Join(labelSelector, ",")})
 			if err != nil {
 				color.Red.Fprintln(out, err.Error())
 				return err
@@ -100,4 +99,3 @@ func execGetService(ctx context.Context, out io.Writer) error {
 		return nil
 	})
 }
-

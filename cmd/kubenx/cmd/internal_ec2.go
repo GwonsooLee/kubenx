@@ -45,7 +45,7 @@ func _get_detail_info_of_nodegroup() {
 	labels := []string{}
 	if len(LabelsObj) > 0 {
 		for key, value := range LabelsObj {
-			labels = append(labels, fmt.Sprintf("%s=%s", key ,*value))
+			labels = append(labels, fmt.Sprintf("%s=%s", key, *value))
 		}
 	}
 
@@ -71,10 +71,9 @@ func _get_detail_info_of_nodegroup() {
 	// DiskSize int64
 	DiskSize := info.Nodegroup.DiskSize
 
-	table.Append([]string{nodegroup, *Status, instanceTypes, strings.Join(labels,","), strconv.FormatInt(*MinSize, 10), strconv.FormatInt(*DesiredSize, 10), strconv.FormatInt(*MaxSize, 10), autoScalingGroups, strconv.FormatInt(*DiskSize, 10)})
+	table.Append([]string{nodegroup, *Status, instanceTypes, strings.Join(labels, ","), strconv.FormatInt(*MinSize, 10), strconv.FormatInt(*DesiredSize, 10), strconv.FormatInt(*MaxSize, 10), autoScalingGroups, strconv.FormatInt(*DiskSize, 10)})
 
 	table.Render()
 	fmt.Println()
 	instanceTable.Render()
 }
-

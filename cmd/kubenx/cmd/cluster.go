@@ -1,15 +1,15 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"io"
-	"strings"
 	"context"
-	"github.com/spf13/cobra"
-	"github.com/olekukonko/tablewriter"
+	"fmt"
 	"github.com/GwonsooLee/kubenx/pkg/aws"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/olekukonko/tablewriter"
+	"github.com/spf13/cobra"
+	"io"
+	"os"
+	"strings"
 )
 
 var (
@@ -173,7 +173,6 @@ func execInitCluster(ctx context.Context, out io.Writer) error {
 		color.Yellow.Fprintln(out, "Step 3. Tag setup for private subnet")
 		color.Yellow.Fprintln(out, "Step 4. Create Open ID Connector")
 		fmt.Println()
-
 
 		// Check the vpc tag is updated
 		if hasVPCTag {

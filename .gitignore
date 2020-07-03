@@ -1,5 +1,6 @@
 bin
 *.gz
 bin/*.gz
-release.sh
+*.sh
+*.txt
 .idea

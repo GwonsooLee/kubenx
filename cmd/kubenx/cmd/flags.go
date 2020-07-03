@@ -41,7 +41,7 @@ var FlagRegistry = []Flag{
 		Value:         aws.String(NO_STRING),
 		DefValue:      "",
 		FlagAddMethod: "StringVar",
-		DefinedOn:     []string{"pod", "deployment", "service", "serviceaccount", "configmap", "ingress", "role", "rolebinding", "secret" },
+		DefinedOn:     []string{"pod", "deployment", "service", "serviceaccount", "configmap", "ingress", "role", "rolebinding", "secret"},
 	},
 	{
 		Name:          "region",
@@ -93,13 +93,13 @@ func reflectValueOf(values []interface{}) []reflect.Value {
 }
 
 //Add command flags
-func SetCommandFlags(cmd *cobra.Command)  {
+func SetCommandFlags(cmd *cobra.Command) {
 	for _, child := range cmd.Commands() {
 		var flagsForCommand []*Flag
 		for i := range FlagRegistry {
 			fl := &FlagRegistry[i]
 
-			if isStringInArr(child.Use, fl.DefinedOn){
+			if isStringInArr(child.Use, fl.DefinedOn) {
 				child.PersistentFlags().AddFlag(fl.flag())
 				flagsForCommand = append(flagsForCommand, fl)
 			}
@@ -128,4 +128,3 @@ func SetCommandFlags(cmd *cobra.Command)  {
 		}
 	}
 }
-

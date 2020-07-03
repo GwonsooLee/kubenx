@@ -2,20 +2,28 @@ package aws
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/spf13/viper"
 )
 
 // Get EKS Session
-func GetEksSession() *eks.EKS {
+func GetEksSession(role *string) *eks.EKS {
 	awsRegion := viper.GetString("region")
 	mySession := session.Must(session.NewSession())
-	svc := eks.New(mySession, &aws.Config{Region: aws.String(awsRegion)})
 
-	return svc
+	var creds *credentials.Credentials
+	if role != nil {
+		creds = stscreds.NewCredentials(mySession, *role)
+	}
+
+	if creds == nil {
+		return eks.New(mySession, &aws.Config{Region: aws.String(awsRegion)})
+	}
+	return eks.New(mySession, &aws.Config{Region: aws.String(awsRegion), Credentials: creds})
 }
-
 
 // Get Cluster Information with session
 func GetClusterInfo(svc *eks.EKS, cluster string) (*eks.DescribeClusterOutput, error) {

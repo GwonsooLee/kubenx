@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"io"
 	"bytes"
 	"context"
 	"github.com/spf13/cobra"
+	"io"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"os"
 )
@@ -43,7 +43,7 @@ To configure your bash shell to load completions for each session add to your ba
 
 # ~/.bashrc or ~/.profile
 . <(kubenx completion zsh)
-`		).
+`).
 		RunWithArgsAndCmd(execCompletion)
 }
 

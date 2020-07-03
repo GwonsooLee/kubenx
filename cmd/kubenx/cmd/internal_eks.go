@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-
 // Get All EKS Cluster
 func getEKSClusterList(svc *eks.EKS) []string {
 	inputParams := &eks.ListClustersInput{MaxResults: aws.Int64(100)}

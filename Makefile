@@ -1,4 +1,3 @@
-VERSION := 1.0.4
 LOCALPATH := /usr/local/bin/
 ARTIFACT_PATH := bin
 SCRIPT_FILE=release.sh
@@ -11,7 +10,7 @@ clean:
 	rm -rf ${ARTIFACT_PATH}
 
 upload:
-	./${SCRIPT_FILE} ${VERSION}
+	./${SCRIPT_FILE}
 
 install: build clean
 

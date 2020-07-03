@@ -1,23 +1,25 @@
 package aws
 
 import (
-	"os"
-	"fmt"
-	"io/ioutil"
 	"encoding/json"
-	"github.com/spf13/viper"
+	"fmt"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
-	"github.com/GwonsooLee/kubenx/pkg/utils"
+	"github.com/aws/aws-sdk-go/service/sts"
+	"github.com/spf13/viper"
+	"io/ioutil"
+	"os"
 )
 
 type KubenxAussmeConfig struct {
-	SessionName			string 				`json:"session_name"`
-	Assume 				map[string]string 	`json:"assume"`
-	EKSAssumeMapping 	map[string]string 	`json:"eks-assume-mapping"`
+	SessionName      string            `json:"session_name"`
+	Assume           map[string]string `json:"assume"`
+	EKSAssumeMapping map[string]string `json:"eks-assume-mapping"`
 }
 
 var (
@@ -27,22 +29,27 @@ var (
 	CREATION_FAILURE = 0
 
 	//OPEN_ID_CA_FINGERPRINT
-	CA_FINGERPRINT = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
-	CONFIG_FILE_PATH = utils.HomeDir()+"/.kubenx/config"
-
+	CA_FINGERPRINT   = "9e99a48a9960b14926bb7f3b02e22da2b0ab7280"
+	CONFIG_FILE_PATH = utils.HomeDir() + "/.kubenx/config"
 )
 
-func GetIAMSession() *iam.IAM {
+func GetIAMSession(role *string) *iam.IAM {
 	awsRegion := viper.GetString("region")
 	mySession := session.Must(session.NewSession())
-	svc := iam.New(mySession, &aws.Config{Region: aws.String(awsRegion)})
 
-	return svc
+	var creds *credentials.Credentials
+	if role != nil {
+		creds = stscreds.NewCredentials(mySession, *role)
+	}
+
+	if creds == nil {
+		return iam.New(mySession, &aws.Config{Region: aws.String(awsRegion)})
+	}
+	return iam.New(mySession, &aws.Config{Region: aws.String(awsRegion), Credentials: creds})
 }
 
-
 func getSTSSession() *sts.STS {
-	resetAWSEnvironmentVariable()
+	ResetAWSEnvironmentVariable()
 
 	awsRegion := viper.GetString("region")
 	mySession := session.Must(session.NewSession())
@@ -51,7 +58,7 @@ func getSTSSession() *sts.STS {
 	return svc
 }
 
-func resetAWSEnvironmentVariable()  {
+func ResetAWSEnvironmentVariable() {
 	os.Unsetenv("AWS_ACCESS_KEY_ID")
 	os.Unsetenv("AWS_SECRET_ACCESS_KEY")
 	os.Unsetenv("AWS_SESSION_TOKEN")
@@ -79,13 +86,16 @@ func CreateOpenIDConnector(svc *iam.IAM, issuerUrl *string) (int, error) {
 }
 
 //Find Assume role mapping information
-func FindEKSAussmeInfo() KubenxAussmeConfig {
-	rawJson, _ := ioutil.ReadFile(CONFIG_FILE_PATH)
-
+func FindEKSAussmeInfo() (KubenxAussmeConfig, error) {
 	kubenxAssumeConfig := KubenxAussmeConfig{}
+	rawJson, err := ioutil.ReadFile(CONFIG_FILE_PATH)
+	if err != nil {
+		return kubenxAssumeConfig, err
+	}
+
 	_ = json.Unmarshal(rawJson, &kubenxAssumeConfig)
 
-	return kubenxAssumeConfig
+	return kubenxAssumeConfig, nil
 }
 
 // Create STS Assume Role

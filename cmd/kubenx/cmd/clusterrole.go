@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"github.com/GwonsooLee/kubenx/pkg/color"
-	"io"
 	"context"
+	"github.com/GwonsooLee/kubenx/pkg/color"
 	"github.com/spf13/cobra"
+	"io"
 )
 
 //Create Command for get cluster role
@@ -15,7 +15,6 @@ func NewCmdGetClusterRole() *cobra.Command {
 		RunWithNoArgs(execGetClusterrole)
 }
 
-
 // Function for get command
 func execGetClusterrole(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
@@ -25,11 +24,10 @@ func execGetClusterrole(ctx context.Context, out io.Writer) error {
 			return err
 		}
 
-		if ! renderClusterRolesListInfo(clusterRoles) {
+		if !renderClusterRolesListInfo(clusterRoles) {
 			color.Red.Fprintln(out, "No cluster role exists in the namespace")
 		}
 
 		return nil
 	})
 }
-

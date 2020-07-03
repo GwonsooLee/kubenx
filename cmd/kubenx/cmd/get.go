@@ -21,4 +21,3 @@ func execGet(_ context.Context, _ io.Writer, cmd *cobra.Command, args []string) 
 	cmd.Help()
 	return nil
 }
-

@@ -1,10 +1,10 @@
 package app
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
-	"context"
 )
 
 func catchCtrlC(cancel context.CancelFunc) {
@@ -21,4 +21,3 @@ func catchCtrlC(cancel context.CancelFunc) {
 		cancel()
 	}()
 }
-

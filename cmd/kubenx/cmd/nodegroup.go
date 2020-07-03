@@ -20,4 +20,3 @@ var ngCmd = &cobra.Command{
 	},
 	Aliases: []string{"ng"},
 }
-

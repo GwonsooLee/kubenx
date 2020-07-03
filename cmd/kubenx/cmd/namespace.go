@@ -12,8 +12,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-
-
 //Create Command for get pod
 func NewCmdNamespace() *cobra.Command {
 	return NewCmd("namespace").
@@ -98,7 +96,7 @@ func execNamespace(ctx context.Context, out io.Writer, args []string) error {
 			}
 
 			// If the target is not in the context
-			if ! containsTarget {
+			if !containsTarget {
 				color.Yellow.Fprintf(out, "[ %s ] namespace doesn't exist. Please check the namespaces.", target)
 				return nil
 			}
@@ -108,7 +106,7 @@ func execNamespace(ctx context.Context, out io.Writer, args []string) error {
 
 		//Change To New Namespace
 		currentConfig.Contexts[currentConfig.CurrentContext].Namespace = newNamespace
-		configAccess := clientcmd.NewDefaultClientConfig(*configs,  &clientcmd.ConfigOverrides{}).ConfigAccess()
+		configAccess := clientcmd.NewDefaultClientConfig(*configs, &clientcmd.ConfigOverrides{}).ConfigAccess()
 
 		clientcmd.ModifyConfig(configAccess, *currentConfig, false)
 		color.Yellow.Fprintf(out, "Namespace is changed to %s", newNamespace)

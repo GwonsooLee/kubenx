@@ -63,7 +63,7 @@ func GetCurrentCluster() (string, error) {
 }
 
 // Get api configuration
-func getAPIConfig() (*api.Config, *string, error)  {
+func getAPIConfig() (*api.Config, *string, error) {
 	var kubeconfig *string
 	if home := homeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
@@ -112,6 +112,7 @@ func getConfigFromFlag() (*rest.Config, error) {
 
 	return config, nil
 }
+
 // Get All Raw Pod list
 func getAllRawPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Pod, error) {
 	listOpt := metav1.ListOptions{}
@@ -157,7 +158,6 @@ func getAllRawSecrets(ctx context.Context, clientset *kubernetes.Clientset, name
 	return secrets.Items, nil
 }
 
-
 // Get All Raw clusterrole list
 func getAllRawClusterRoles(ctx context.Context, clientset *typedRbacv1.RbacV1Client, labelSelector string) ([]rbacv1.ClusterRole, error) {
 	listOpt := metav1.ListOptions{}
@@ -187,7 +187,6 @@ func getAllRawClusterRoleBindings(ctx context.Context, clientset *typedRbacv1.Rb
 
 	return clusterRoleBindings.Items, nil
 }
-
 
 // Get All Raw role list
 func getAllRawRoles(ctx context.Context, clientset *typedRbacv1.RbacV1Client, namespace string, labelSelector string) ([]rbacv1.Role, error) {
@@ -249,7 +248,7 @@ func getNodeListForOption(clientset *kubernetes.Clientset) []string {
 		for _, nodeAddr := range nodeStatus.Addresses {
 			if nodeAddr.Type == "Hostname" {
 				labels := createLabelForOption(objectMeta.Labels)
-				nodeList = append(nodeList, fmt.Sprintf("%s (%s)", nodeAddr.Address,labels))
+				nodeList = append(nodeList, fmt.Sprintf("%s (%s)", nodeAddr.Address, labels))
 				break
 			}
 
@@ -260,10 +259,9 @@ func getNodeListForOption(clientset *kubernetes.Clientset) []string {
 }
 
 //Create Label to display for options
-func createLabelForOption(labels map[string]string) string  {
+func createLabelForOption(labels map[string]string) string {
 	ret := []string{}
 	LabelFilters := DEFAULT_NODE_LABEL_FILTERS
-
 
 	for _, key := range LabelFilters {
 		if len(labels[key]) > 0 {
@@ -341,7 +339,7 @@ func portForwardToPod(req PortForwardAPodRequest) error {
 }
 
 // Get Node for inspect
-func getTargetNode(clientset *kubernetes.Clientset, args []string) (string,error) {
+func getTargetNode(clientset *kubernetes.Clientset, args []string) (string, error) {
 	// Pass from command
 	if len(args) == 1 {
 		return args[0], nil
@@ -398,7 +396,7 @@ func renderServiceAccountsListInfo(serviceaccounts []corev1.ServiceAccount) bool
 			}
 		}
 
-		for key,value := range objectMeta.Annotations {
+		for key, value := range objectMeta.Annotations {
 			if key == AWS_IAM_ANNOTATION {
 				iamRole = strings.Split(value, "/")[1]
 				break
@@ -555,7 +553,6 @@ func renderConfigMapsListInfo(configmaps []corev1.ConfigMap) bool {
 		return false
 	}
 
-
 	//Check Namespace
 	namespace, err := getNamespace()
 	if err != nil {
@@ -603,7 +600,7 @@ func renderPodListInfo(pods []corev1.Pod) bool {
 
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader(combineNamespace([]string{"Name", "READY", "STATUS", "Hostname", "Pod IP", "Host IP", "Node", "Age"}, true, namespace,  NO_STRING))
+	table.SetHeader(combineNamespace([]string{"Name", "READY", "STATUS", "Hostname", "Pod IP", "Host IP", "Node", "Age"}, true, namespace, NO_STRING))
 
 	now := time.Now()
 	for _, pod := range pods {
@@ -637,7 +634,6 @@ func renderPodListInfo(pods []corev1.Pod) bool {
 			}
 		}
 
-
 		table.Append(combineNamespace([]string{objectMeta.Name, strconv.Itoa(readyCount) + "/" + strconv.Itoa(totalCount), status, podSpec.Hostname, podStatus.PodIP, podStatus.HostIP, podSpec.NodeName, duration}, false, namespace, objectMeta.Namespace))
 	}
 	table.Render()
@@ -646,7 +642,7 @@ func renderPodListInfo(pods []corev1.Pod) bool {
 }
 
 // Combine Namespace
-func combineNamespace(origin []string, header bool, namespace, target string) []string  {
+func combineNamespace(origin []string, header bool, namespace, target string) []string {
 	if namespace != NO_STRING {
 		return origin
 	}
@@ -714,7 +710,7 @@ func renderNodeListInfo(nodes []corev1.Node) bool {
 			}
 		}
 
-		table.Append([]string{objectMeta.Name, status, internalIp, externalIp, strings.Join(labels,","), nodeStatus.NodeInfo.KubeletVersion, nodeStatus.NodeInfo.OSImage, duration})
+		table.Append([]string{objectMeta.Name, status, internalIp, externalIp, strings.Join(labels, ","), nodeStatus.NodeInfo.KubeletVersion, nodeStatus.NodeInfo.OSImage, duration})
 	}
 	table.Render()
 

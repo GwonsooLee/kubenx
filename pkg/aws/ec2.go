@@ -2,20 +2,28 @@ package aws
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/spf13/viper"
 )
 
 // Get EC2 Session
-func GetEC2Session() *ec2.EC2 {
+func GetEC2Session(role *string) *ec2.EC2 {
 	awsRegion := viper.GetString("region")
 	mySession := session.Must(session.NewSession())
-	svc := ec2.New(mySession, &aws.Config{Region: aws.String(awsRegion)})
 
-	return svc
+	var creds *credentials.Credentials
+	if role != nil {
+		creds = stscreds.NewCredentials(mySession, *role)
+	}
+
+	if creds == nil {
+		return ec2.New(mySession, &aws.Config{Region: aws.String(awsRegion)})
+	}
+	return ec2.New(mySession, &aws.Config{Region: aws.String(awsRegion), Credentials: creds})
 }
-
 
 // Describe Single VPC Information
 func GetVPCInfo(svc *ec2.EC2, vpcId *string) (*ec2.DescribeVpcsOutput, error) {
@@ -31,7 +39,6 @@ func GetVPCInfo(svc *ec2.EC2, vpcId *string) (*ec2.DescribeVpcsOutput, error) {
 	return ret, nil
 }
 
-
 // Describe subnet subnet Information
 func GetSubnetsInfo(svc *ec2.EC2, subnetIds []*string) (*ec2.DescribeSubnetsOutput, error) {
 	inputParam := &ec2.DescribeSubnetsInput{SubnetIds: subnetIds}
@@ -43,8 +50,6 @@ func GetSubnetsInfo(svc *ec2.EC2, subnetIds []*string) (*ec2.DescribeSubnetsOutp
 
 	return ret, nil
 }
-
-
 
 // Get all subnet list in vpc
 func GetSubnetListInVPC(svc *ec2.EC2, vpcId *string) (*ec2.DescribeSubnetsOutput, error) {
@@ -64,7 +69,6 @@ func GetSubnetListInVPC(svc *ec2.EC2, vpcId *string) (*ec2.DescribeSubnetsOutput
 
 	return ret, nil
 }
-
 
 // Update VPC Tag for cluster
 func UpdateVPCTagForCluster(svc *ec2.EC2, vpcId *string, cluster string) error {
@@ -86,7 +90,6 @@ func UpdateVPCTagForCluster(svc *ec2.EC2, vpcId *string, cluster string) error {
 
 	return nil
 }
-
 
 // Update Subnet Tag for cluster
 func UpdateSubnetsTagForCluster(svc *ec2.EC2, subnets []*string, cluster string, subnetType string) error {
