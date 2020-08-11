@@ -6,6 +6,7 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/GwonsooLee/kubenx/pkg/aws"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
 	"github.com/spf13/cobra"
 	"io"
 	"k8s.io/client-go/tools/clientcmd"
@@ -31,14 +32,14 @@ func changeContext(out io.Writer, args []string) error {
 	var newContext string
 
 	//Get API configuration
-	configs, _, err := getAPIConfig()
+	configs, _, err := runner.GetAPIConfig()
 	if err != nil {
 		color.Red.Fprintln(out, err.Error())
 		return err
 	}
 
 	// Get Client Configuration
-	currentConfig, err := getCurrentConfig()
+	currentConfig, err := runner.GetCurrentConfig()
 	if err != nil {
 		color.Red.Fprintln(out, err.Error())
 		return err

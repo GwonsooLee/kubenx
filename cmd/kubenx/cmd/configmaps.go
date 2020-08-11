@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/spf13/cobra"
 	"io"
 )
@@ -19,11 +21,11 @@ func NewCmdGetConfigMap() *cobra.Command {
 func execGetConfigMap(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
 		// Get All Pods in current namespace
-		configMaps, err := getAllRawConfigMaps(ctx, executor.Client, executor.Namespace, NO_STRING)
+		configMaps, err := runner.GetAllRawConfigMaps(ctx, executor.Client, executor.Namespace, utils.NO_STRING)
 		if err != nil {
 			return err
 		}
-		if !renderConfigMapsListInfo(configMaps) {
+		if !runner.RenderConfigMapsListInfo(configMaps) {
 			color.Red.Fprintln(out, "No configmap exists in the namespace")
 		}
 

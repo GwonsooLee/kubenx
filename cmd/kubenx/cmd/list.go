@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"os"
 	"strconv"
 
@@ -19,10 +21,10 @@ var listCmd = &cobra.Command{
 		argsLen := len(args)
 
 		if argsLen > 1 {
-			Red("Too many Arguments")
+			utils.Red("Too many Arguments")
 			os.Exit(1)
 		} else if argsLen == 0 {
-			Red("At least one argument is needed.")
+			utils.Red("At least one argument is needed.")
 			os.Exit(1)
 		}
 
@@ -35,7 +37,7 @@ var listCmd = &cobra.Command{
 		case objType == "nodegroup" || objType == "ng":
 			list_nodegroups()
 		default:
-			Red("Please follow the direction")
+			utils.Red("Please follow the direction")
 		}
 
 	},
@@ -52,13 +54,13 @@ func init() {
 
 // List Clusters
 func list_clusters() {
-	svc := _get_eks_session()
-	clusters := _get_eks_cluster_list(svc)
+	svc := runner.GetEksSession()
+	clusters := runner.GetEKSClusterList(svc)
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Name", "Status", "Version", "Arn", "Endpoint"})
 	for _, cluster := range clusters {
-		clusterInfo := _get_cluster_info_with_session(svc, cluster)
+		clusterInfo := runner.GetClusterInfoWithSession(svc, cluster)
 		arn := clusterInfo.Cluster.Arn
 		endpoint := clusterInfo.Cluster.Endpoint
 		version := clusterInfo.Cluster.Version
@@ -82,18 +84,18 @@ func list_nodegroups() {
 
 	// If cluster is not given then choose!
 	if len(cluster) <= 0 {
-		cluster = _choose_cluster()
+		cluster = runner.ChooseCluster()
 	}
 
-	svc := _get_eks_session()
-	nodegroupList := _get_node_group_list(svc, cluster)
+	svc := runner.GetEksSession()
+	nodegroupList := runner.GetNodeGroupList(svc, cluster)
 
 	// Tables for showing outputs
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"NAME", "STATUS", "INSTANCE TYPE", "LABELS", "MIN SIZE", "DISIRED SIZE", "MAX SIZE", "AUTOSCALING GROUPDS", "DISK SIZE"})
 	// Get node group information
 	for _, nodegroup := range nodegroupList {
-		info := _get_nodegroup_info_with_session(svc, cluster, nodegroup)
+		info := runner.GetNodegroupInfoWithSession(svc, cluster, nodegroup)
 
 		// Retrieve Values
 		//Status string

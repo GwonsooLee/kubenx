@@ -4,3 +4,5 @@ bin/*.gz
 *.sh
 *.txt
 .idea
+archive
+.DS_Store

@@ -6,12 +6,19 @@ kubenx is command line tool combining `eks cli` and `kubectl`
 - Please Install `go` first
     - https://golang.org/doc/install
 ```bash
-$ curl -LO https://feeldayone-public.s3.ap-northeast-2.amazonaws.com/release/latest/kubenx.tar.gz
+# macos 
+$ brew tap GwonsooLee/gslee
+$ brew install kubenx
+$ kubenx version
+Current Version is v1.0.0
+
+# Linux
+$ curl -LO https://feeldayone-public.s3.ap-northeast-2.amazonaws.com/release/linux/latest/kubenx.tar.gz
 $ gzip -d kubenx.tar.gz
 $ tar -xzvf kubenx.tar
 $ mv kubenx /usr/local/bin
 $ kubenx version
-Current Version is v1.0.4
+Current Version is v1.0.0
 ```
 <br>
 

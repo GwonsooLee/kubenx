@@ -3,16 +3,20 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/GwonsooLee/kubenx/pkg/color"
-	"github.com/spf13/cobra"
 	"io"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
+	"github.com/spf13/cobra"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 //Create Command for get pod
@@ -36,12 +40,12 @@ func execGetPod(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
 
 		// Get All Pods in current namespace
-		pods, err := getAllRawPods(ctx, executor.Client, executor.Namespace, NO_STRING)
+		pods, err := runner.GetAllRawPods(ctx, executor.Client, executor.Namespace, utils.NO_STRING)
 		if err != nil {
 			return err
 		}
 
-		if !renderPodListInfo(pods) {
+		if !runner.RenderPodListInfo(pods) {
 			color.Red.Fprintln(out, "No pod exists in the namespace")
 		}
 
@@ -71,7 +75,7 @@ func execPortForward(ctx context.Context, out io.Writer) error {
 		}
 
 		//Get Parameters from input
-		pod, local_port, pod_port := selectPodPortNS(podNames)
+		pod, local_port, pod_port := runner.SelectPodPortNS(podNames)
 
 		// stopCh control the port forwarding lifecycle. When it gets closed the
 		// port forward will terminate
@@ -101,7 +105,7 @@ func execPortForward(ctx context.Context, out io.Writer) error {
 		go func() {
 			// PortForward the pod specified from its port 9090 to the local port
 			// 8080
-			err := portForwardToPod(PortForwardAPodRequest{
+			err := runner.PortForwardToPod(runner.PortForwardAPodRequest{
 				RestConfig: executor.Config,
 				Pod: corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{

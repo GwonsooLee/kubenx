@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/spf13/cobra"
 	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,13 +38,13 @@ func execSearch(_ context.Context, _ io.Writer, cmd *cobra.Command, args []strin
 func execSearchLabel(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
 
-		key, err := getSingleStringInput("Key")
+		key, err := utils.GetSingleStringInput("Key")
 		if err != nil {
 			color.Red.Fprintln(out, err)
 			os.Exit(1)
 		}
 
-		value, err := getSingleStringInput("Value")
+		value, err := utils.GetSingleStringInput("Value")
 		if err != nil {
 			color.Red.Fprintln(out, err)
 			os.Exit(1)
@@ -66,20 +68,20 @@ func execSearchLabel(ctx context.Context, out io.Writer) error {
 			os.Exit(1)
 		}
 
-		if !renderNodeListInfo(nodes.Items) {
+		if !runner.RenderNodeListInfo(nodes.Items) {
 			color.Red.Fprintln(out, "No node exists")
 		}
 		fmt.Println()
 
 		//Print pod
 		color.Yellow.Fprintln(out, "========Pod INFO=======")
-		pods, err := getAllRawPods(ctx, executor.Client, ALL_NAMESPACE, labelSelector)
+		pods, err := runner.GetAllRawPods(ctx, executor.Client, utils.ALL_NAMESPACE, labelSelector)
 		if err != nil {
 			color.Red.Fprintln(out, err)
 			os.Exit(1)
 		}
 
-		if !renderPodListInfo(pods) {
+		if !runner.RenderPodListInfo(pods) {
 			color.Red.Fprintln(out, "No pod exists in the namespace")
 		}
 

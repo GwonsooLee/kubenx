@@ -7,6 +7,8 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/GwonsooLee/kubenx/pkg/aws"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
@@ -74,7 +76,7 @@ func execUpdateConfig(ctx context.Context, out io.Writer, args []string) error {
 		}
 
 		if len(cluster) == 0 {
-			clusters := getEKSClusterList(executor.EKS)
+			clusters := runner.GetEKSClusterList(executor.EKS)
 			prompt := &survey.Select{
 				Message: "Choose a cluster:",
 				Options: clusters,
@@ -120,9 +122,9 @@ func execUpdateConfig(ctx context.Context, out io.Writer, args []string) error {
 
 		newAuthInfo := api.NewAuthInfo()
 		newAuthInfo.Exec = &api.ExecConfig{
-			Command:    AUTH_COMMAND,
+			Command:    utils.AUTH_COMMAND,
 			Args:       []string{"--region", viper.GetString("region"), "eks", "get-token", "--cluster-name", name},
-			APIVersion: AUTH_API_VERSION,
+			APIVersion: utils.AUTH_API_VERSION,
 		}
 
 		newContext := api.NewContext()
@@ -174,7 +176,7 @@ func execInitConfig(ctx context.Context, out io.Writer) error {
 	if len(assumeList) == 0 {
 		color.Yellow.Fprintln(out, "no assume role exists. only init with current configuration.")
 		return runExecutorWithAWS(ctx, func(executor Executor) error {
-			clusters := getEKSClusterList(executor.EKS)
+			clusters := runner.GetEKSClusterList(executor.EKS)
 
 			for _, cluster := range clusters {
 				if err := updateKubeConfig(executor, out, cluster); err != nil {
@@ -195,7 +197,7 @@ func execInitConfig(ctx context.Context, out io.Writer) error {
 			executor.EC2 = aws.GetEC2Session(&role)
 			executor.IAM = aws.GetIAMSession(&role)
 
-			clusters := getEKSClusterList(executor.EKS)
+			clusters := runner.GetEKSClusterList(executor.EKS)
 
 			for _, cluster := range clusters {
 				if err := updateKubeConfig(executor, out, cluster); err != nil {
@@ -240,9 +242,9 @@ func updateKubeConfig(executor Executor, out io.Writer, cluster string) error {
 
 	newAuthInfo := api.NewAuthInfo()
 	newAuthInfo.Exec = &api.ExecConfig{
-		Command:    AUTH_COMMAND,
+		Command:    utils.AUTH_COMMAND,
 		Args:       []string{"--region", viper.GetString("region"), "eks", "get-token", "--cluster-name", name},
-		APIVersion: AUTH_API_VERSION,
+		APIVersion: utils.AUTH_API_VERSION,
 	}
 
 	newContext := api.NewContext()

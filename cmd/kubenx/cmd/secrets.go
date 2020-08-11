@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/spf13/cobra"
 	"io"
 )
@@ -19,12 +21,12 @@ func NewCmdGetSecret() *cobra.Command {
 func execGetSecret(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
 		// Get All Pods in current namespace
-		secrets, err := getAllRawSecrets(ctx, executor.Client, executor.Namespace, NO_STRING)
+		secrets, err := runner.GetAllRawSecrets(ctx, executor.Client, executor.Namespace, utils.NO_STRING)
 		if err != nil {
 			return err
 		}
 
-		if !renderSecretsListInfo(secrets) {
+		if !runner.RenderSecretsListInfo(secrets) {
 			color.Red.Fprintln(out, "No secret exists in the namespace")
 		}
 

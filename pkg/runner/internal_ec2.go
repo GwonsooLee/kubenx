@@ -1,30 +1,32 @@
-package cmd
+package runner
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 )
 
 // Get Detailed Information about nodegroup
-func _get_detail_info_of_nodegroup() {
-	svc := _get_eks_session()
+func GetDetailInfoOfNodegroup() {
+	svc := GetEksSession()
 
 	// Check the cluster First
-	cluster := _get_current_cluster()
+	cluster := getCurrentCluster()
 
 	//Choose Nodegroup
-	nodegroup := _choose_nodegroup(cluster)
+	nodegroup := ChooseNodegroup(cluster)
 
 	// NodeGroup Information Table
-	table := _get_table_object()
+	table := utils.GetTableObject()
 	table.SetHeader([]string{"NAME", "STATUS", "INSTANCE TYPE", "LABELS", "MIN SIZE", "DISIRED SIZE", "MAX SIZE", "AUTOSCALING GROUPDS", "DISK SIZE"})
 
 	// Instance Group Information Table
-	instanceTable := _get_table_object()
+	instanceTable := utils.GetTableObject()
 	instanceTable.SetHeader([]string{"Autoscaling Group", "Instance ID", "Health Status", "Instance Type", "Availability Zone"})
 
-	info := _get_nodegroup_info_with_session(svc, cluster, nodegroup)
+	info := GetNodegroupInfoWithSession(svc, cluster, nodegroup)
 
 	// Retrieve Values
 	//Status string
@@ -56,7 +58,7 @@ func _get_detail_info_of_nodegroup() {
 		line := *(group.Name) + ","
 		autoScalingGroups += line
 
-		autoscalingInfo := _get_autoscaling_group_info(nil, *group.Name).AutoScalingGroups[0]
+		autoscalingInfo := getAutoscalingGroupInfo(nil, *group.Name).AutoScalingGroups[0]
 		for _, instance := range autoscalingInfo.Instances {
 			instanceTable.Append([]string{*group.Name, *instance.InstanceId, *instance.HealthStatus, *instance.InstanceType, *instance.AvailabilityZone})
 		}

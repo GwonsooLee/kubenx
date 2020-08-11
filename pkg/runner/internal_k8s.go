@@ -1,10 +1,9 @@
-package cmd
+package runner
 
 import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/spf13/viper"
 	"net/http"
 	"net/url"
 	"os"
@@ -29,6 +28,8 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/AlecAivazis/survey/v2/terminal"
 	"github.com/GwonsooLee/kubenx/pkg/table"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
+	"github.com/spf13/viper"
 )
 
 //Port Forward Request
@@ -56,16 +57,16 @@ func GetCurrentCluster() (string, error) {
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 	rawConfig, err := clientcmd.ClientConfig.RawConfig(kubeConfig)
 	if err != nil {
-		return NO_STRING, err
+		return utils.NO_STRING, err
 	}
 
 	return rawConfig.CurrentContext, nil
 }
 
 // Get api configuration
-func getAPIConfig() (*api.Config, *string, error) {
+func GetAPIConfig() (*api.Config, *string, error) {
 	var kubeconfig *string
-	if home := homeDir(); home != "" {
+	if home := utils.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
 		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
@@ -81,7 +82,7 @@ func getAPIConfig() (*api.Config, *string, error) {
 }
 
 //Get current configuration
-func getCurrentConfig() (*api.Config, error) {
+func GetCurrentConfig() (*api.Config, error) {
 	configOverrides := &clientcmd.ConfigOverrides{}
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
@@ -93,10 +94,10 @@ func getCurrentConfig() (*api.Config, error) {
 	return &currentConfig, nil
 }
 
-func getConfigFromFlag() (*rest.Config, error) {
+func GetConfigFromFlag() (*rest.Config, error) {
 	//Get kubernetes Client
 	var kubeconfig *string
-	if home := homeDir(); home != "" {
+	if home := utils.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
 	} else {
 		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
@@ -114,7 +115,7 @@ func getConfigFromFlag() (*rest.Config, error) {
 }
 
 // Get All Raw Pod list
-func getAllRawPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Pod, error) {
+func GetAllRawPods(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Pod, error) {
 	listOpt := metav1.ListOptions{}
 	if len(labelSelector) > 0 {
 		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
@@ -129,7 +130,7 @@ func getAllRawPods(ctx context.Context, clientset *kubernetes.Clientset, namespa
 }
 
 // Get All Raw configmap list
-func getAllRawConfigMaps(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.ConfigMap, error) {
+func GetAllRawConfigMaps(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.ConfigMap, error) {
 	listOpt := metav1.ListOptions{}
 	if len(labelSelector) > 0 {
 		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
@@ -144,7 +145,7 @@ func getAllRawConfigMaps(ctx context.Context, clientset *kubernetes.Clientset, n
 }
 
 // Get All Raw secret list
-func getAllRawSecrets(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Secret, error) {
+func GetAllRawSecrets(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.Secret, error) {
 	listOpt := metav1.ListOptions{}
 	if len(labelSelector) > 0 {
 		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
@@ -159,7 +160,7 @@ func getAllRawSecrets(ctx context.Context, clientset *kubernetes.Clientset, name
 }
 
 // Get All Raw clusterrole list
-func getAllRawClusterRoles(ctx context.Context, clientset *typedRbacv1.RbacV1Client, labelSelector string) ([]rbacv1.ClusterRole, error) {
+func GetAllRawClusterRoles(ctx context.Context, clientset *typedRbacv1.RbacV1Client, labelSelector string) ([]rbacv1.ClusterRole, error) {
 	listOpt := metav1.ListOptions{}
 	if len(labelSelector) > 0 {
 		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
@@ -174,7 +175,7 @@ func getAllRawClusterRoles(ctx context.Context, clientset *typedRbacv1.RbacV1Cli
 }
 
 // Get All Raw cluster role binding list
-func getAllRawClusterRoleBindings(ctx context.Context, clientset *typedRbacv1.RbacV1Client, labelSelector string) ([]rbacv1.ClusterRoleBinding, error) {
+func GetAllRawClusterRoleBindings(ctx context.Context, clientset *typedRbacv1.RbacV1Client, labelSelector string) ([]rbacv1.ClusterRoleBinding, error) {
 	listOpt := metav1.ListOptions{}
 	if len(labelSelector) > 0 {
 		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
@@ -189,7 +190,7 @@ func getAllRawClusterRoleBindings(ctx context.Context, clientset *typedRbacv1.Rb
 }
 
 // Get All Raw role list
-func getAllRawRoles(ctx context.Context, clientset *typedRbacv1.RbacV1Client, namespace string, labelSelector string) ([]rbacv1.Role, error) {
+func GetAllRawRoles(ctx context.Context, clientset *typedRbacv1.RbacV1Client, namespace string, labelSelector string) ([]rbacv1.Role, error) {
 	listOpt := metav1.ListOptions{}
 	if len(labelSelector) > 0 {
 		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
@@ -204,7 +205,7 @@ func getAllRawRoles(ctx context.Context, clientset *typedRbacv1.RbacV1Client, na
 }
 
 // Get All Raw rolebindings list
-func getAllRawRoleBindings(ctx context.Context, clientset *typedRbacv1.RbacV1Client, namespace string, labelSelector string) ([]rbacv1.RoleBinding, error) {
+func GetAllRawRoleBindings(ctx context.Context, clientset *typedRbacv1.RbacV1Client, namespace string, labelSelector string) ([]rbacv1.RoleBinding, error) {
 	listOpt := metav1.ListOptions{}
 	if len(labelSelector) > 0 {
 		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
@@ -219,7 +220,7 @@ func getAllRawRoleBindings(ctx context.Context, clientset *typedRbacv1.RbacV1Cli
 }
 
 // Get All Raw serviceaccount list
-func getAllRawServiceAccount(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.ServiceAccount, error) {
+func GetAllRawServiceAccount(ctx context.Context, clientset *kubernetes.Clientset, namespace string, labelSelector string) ([]corev1.ServiceAccount, error) {
 	listOpt := metav1.ListOptions{}
 	if len(labelSelector) > 0 {
 		listOpt = metav1.ListOptions{LabelSelector: labelSelector}
@@ -234,10 +235,10 @@ func getAllRawServiceAccount(ctx context.Context, clientset *kubernetes.Clientse
 }
 
 //Retrive only node List for ssh
-func getNodeListForOption(clientset *kubernetes.Clientset) []string {
+func GetNodeListForOption(clientset *kubernetes.Clientset) []string {
 	nodes, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		Red(err.Error())
+		utils.Red(err.Error())
 		os.Exit(1)
 	}
 
@@ -261,7 +262,7 @@ func getNodeListForOption(clientset *kubernetes.Clientset) []string {
 //Create Label to display for options
 func createLabelForOption(labels map[string]string) string {
 	ret := []string{}
-	LabelFilters := DEFAULT_NODE_LABEL_FILTERS
+	LabelFilters := utils.DEFAULT_NODE_LABEL_FILTERS
 
 	for _, key := range LabelFilters {
 		if len(labels[key]) > 0 {
@@ -277,7 +278,7 @@ func createLabelForOption(labels map[string]string) string {
 }
 
 // Select Pod and port before port forward
-func selectPodPortNS(options []string) (string, int, int) {
+func SelectPodPortNS(options []string) (string, int, int) {
 	// Choose Pod from the list
 	var pod, local_port, pod_port string
 
@@ -289,7 +290,7 @@ func selectPodPortNS(options []string) (string, int, int) {
 	survey.AskOne(prompt, &pod)
 
 	if pod == "" {
-		Red("You canceled the choice")
+		utils.Red("You canceled the choice")
 		os.Exit(1)
 	}
 
@@ -300,7 +301,7 @@ func selectPodPortNS(options []string) (string, int, int) {
 	survey.AskOne(prompt_input, &local_port)
 
 	if local_port == "" {
-		Red("You canceled the choice")
+		utils.Red("You canceled the choice")
 		os.Exit(1)
 	}
 
@@ -312,15 +313,15 @@ func selectPodPortNS(options []string) (string, int, int) {
 	}
 	err := survey.AskOne(prompt_input2, &pod_port)
 	if err == terminal.InterruptErr {
-		Red("interrupted")
+		utils.Red("interrupted")
 		os.Exit(1)
 	}
 
-	return pod, _string_to_int(local_port), _string_to_int(pod_port)
+	return pod, utils.StringToInt(local_port), utils.StringToInt(pod_port)
 }
 
 // Get PortForward Dialer
-func portForwardToPod(req PortForwardAPodRequest) error {
+func PortForwardToPod(req PortForwardAPodRequest) error {
 	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward",
 		req.Pod.Namespace, req.Pod.Name)
 	hostIP := strings.TrimLeft(req.RestConfig.Host, "htps:/")
@@ -339,16 +340,16 @@ func portForwardToPod(req PortForwardAPodRequest) error {
 }
 
 // Get Node for inspect
-func getTargetNode(clientset *kubernetes.Clientset, args []string) (string, error) {
+func GetTargetNode(clientset *kubernetes.Clientset, args []string) (string, error) {
 	// Pass from command
 	if len(args) == 1 {
 		return args[0], nil
 	}
 
-	options := getNodeListForOption(clientset)
+	options := GetNodeListForOption(clientset)
 
 	if len(options) == 0 {
-		return NO_STRING, fmt.Errorf("No node list")
+		return utils.NO_STRING, fmt.Errorf("No node list")
 	}
 
 	var node string
@@ -364,20 +365,20 @@ func getTargetNode(clientset *kubernetes.Clientset, args []string) (string, erro
 }
 
 // Render ServiceAccount list
-func renderServiceAccountsListInfo(serviceaccounts []corev1.ServiceAccount) bool {
+func RenderServiceAccountsListInfo(serviceaccounts []corev1.ServiceAccount) bool {
 	if len(serviceaccounts) <= 0 {
 		return false
 	}
 
 	//Check Namespace
-	namespace, err := getNamespace()
+	namespace, err := GetNamespace()
 	if err != nil {
 		return false
 	}
 
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader(combineNamespace([]string{"NAME", "SECRET COUNT", "KEYS", "IAM ROLE", "AGE"}, true, namespace, NO_STRING))
+	table.SetHeader(combineNamespace([]string{"NAME", "SECRET COUNT", "KEYS", "IAM ROLE", "AGE"}, true, namespace, utils.NO_STRING))
 
 	now := time.Now()
 	for _, serviceaccount := range serviceaccounts {
@@ -397,7 +398,7 @@ func renderServiceAccountsListInfo(serviceaccounts []corev1.ServiceAccount) bool
 		}
 
 		for key, value := range objectMeta.Annotations {
-			if key == AWS_IAM_ANNOTATION {
+			if key == utils.AWS_IAM_ANNOTATION {
 				iamRole = strings.Split(value, "/")[1]
 				break
 			}
@@ -411,20 +412,20 @@ func renderServiceAccountsListInfo(serviceaccounts []corev1.ServiceAccount) bool
 }
 
 // Render Secret list
-func renderSecretsListInfo(secrets []corev1.Secret) bool {
+func RenderSecretsListInfo(secrets []corev1.Secret) bool {
 	if len(secrets) <= 0 {
 		return false
 	}
 
 	//Check Namespace
-	namespace, err := getNamespace()
+	namespace, err := GetNamespace()
 	if err != nil {
 		return false
 	}
 
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader(combineNamespace([]string{"Name", "TYPE", "DATA COUNT", "FIRST FIVE KEYS", "AGE"}, true, namespace, NO_STRING))
+	table.SetHeader(combineNamespace([]string{"Name", "TYPE", "DATA COUNT", "FIRST FIVE KEYS", "AGE"}, true, namespace, utils.NO_STRING))
 
 	now := time.Now()
 	for _, secret := range secrets {
@@ -450,20 +451,20 @@ func renderSecretsListInfo(secrets []corev1.Secret) bool {
 }
 
 // Render Role list
-func renderRolesListInfo(roles []rbacv1.Role) bool {
+func RenderRolesListInfo(roles []rbacv1.Role) bool {
 	if len(roles) <= 0 {
 		return false
 	}
 
 	//Check Namespace
-	namespace, err := getNamespace()
+	namespace, err := GetNamespace()
 	if err != nil {
 		return false
 	}
 
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader(combineNamespace([]string{"Name", "AGE"}, true, namespace, NO_STRING))
+	table.SetHeader(combineNamespace([]string{"Name", "AGE"}, true, namespace, utils.NO_STRING))
 
 	now := time.Now()
 	for _, role := range roles {
@@ -478,20 +479,20 @@ func renderRolesListInfo(roles []rbacv1.Role) bool {
 }
 
 // Render Role Binding list
-func renderRoleBindingsListInfo(roleBindings []rbacv1.RoleBinding) bool {
+func RenderRoleBindingsListInfo(roleBindings []rbacv1.RoleBinding) bool {
 	if len(roleBindings) <= 0 {
 		return false
 	}
 
 	//Check Namespace
-	namespace, err := getNamespace()
+	namespace, err := GetNamespace()
 	if err != nil {
 		return false
 	}
 
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader(combineNamespace([]string{"Name", "AGE"}, true, namespace, NO_STRING))
+	table.SetHeader(combineNamespace([]string{"Name", "AGE"}, true, namespace, utils.NO_STRING))
 
 	now := time.Now()
 	for _, roleBinding := range roleBindings {
@@ -506,7 +507,7 @@ func renderRoleBindingsListInfo(roleBindings []rbacv1.RoleBinding) bool {
 }
 
 // Render Cluster Role list
-func renderClusterRolesListInfo(clusterRoles []rbacv1.ClusterRole) bool {
+func RenderClusterRolesListInfo(clusterRoles []rbacv1.ClusterRole) bool {
 	if len(clusterRoles) <= 0 {
 		return false
 	}
@@ -527,7 +528,7 @@ func renderClusterRolesListInfo(clusterRoles []rbacv1.ClusterRole) bool {
 }
 
 // Render Cluster Role Binding list
-func renderClusterRoleBindingsListInfo(clusterRoleBindings []rbacv1.ClusterRoleBinding) bool {
+func RenderClusterRoleBindingsListInfo(clusterRoleBindings []rbacv1.ClusterRoleBinding) bool {
 	if len(clusterRoleBindings) <= 0 {
 		return false
 	}
@@ -548,20 +549,20 @@ func renderClusterRoleBindingsListInfo(clusterRoleBindings []rbacv1.ClusterRoleB
 }
 
 // Render ConfigMap list
-func renderConfigMapsListInfo(configmaps []corev1.ConfigMap) bool {
+func RenderConfigMapsListInfo(configmaps []corev1.ConfigMap) bool {
 	if len(configmaps) <= 0 {
 		return false
 	}
 
 	//Check Namespace
-	namespace, err := getNamespace()
+	namespace, err := GetNamespace()
 	if err != nil {
 		return false
 	}
 
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader(combineNamespace([]string{"Name", "DATA COUNT", "FIRST FIVE KEYS", "AGE"}, true, namespace, NO_STRING))
+	table.SetHeader(combineNamespace([]string{"Name", "DATA COUNT", "FIRST FIVE KEYS", "AGE"}, true, namespace, utils.NO_STRING))
 
 	now := time.Now()
 	for _, configmap := range configmaps {
@@ -587,20 +588,20 @@ func renderConfigMapsListInfo(configmaps []corev1.ConfigMap) bool {
 }
 
 // Render Pod list
-func renderPodListInfo(pods []corev1.Pod) bool {
+func RenderPodListInfo(pods []corev1.Pod) bool {
 	if len(pods) <= 0 {
 		return false
 	}
 
 	//Check Namespace
-	namespace, err := getNamespace()
+	namespace, err := GetNamespace()
 	if err != nil {
 		return false
 	}
 
 	// Table setup
 	table := table.GetTableObject()
-	table.SetHeader(combineNamespace([]string{"Name", "READY", "STATUS", "Hostname", "Pod IP", "Host IP", "Node", "Age"}, true, namespace, NO_STRING))
+	table.SetHeader(combineNamespace([]string{"Name", "READY", "STATUS", "Hostname", "Pod IP", "Host IP", "Node", "Age"}, true, namespace, utils.NO_STRING))
 
 	now := time.Now()
 	for _, pod := range pods {
@@ -643,17 +644,17 @@ func renderPodListInfo(pods []corev1.Pod) bool {
 
 // Combine Namespace
 func combineNamespace(origin []string, header bool, namespace, target string) []string {
-	if namespace != NO_STRING {
+	if namespace != utils.NO_STRING {
 		return origin
 	}
 
 	additionalHeader := []string{}
-	if namespace == NO_STRING {
+	if namespace == utils.NO_STRING {
 		additionalHeader = append(additionalHeader, "NAMESPACE")
 	}
 
 	additionalContents := []string{}
-	if namespace == NO_STRING {
+	if namespace == utils.NO_STRING {
 		additionalContents = append(additionalContents, target)
 	}
 
@@ -665,7 +666,7 @@ func combineNamespace(origin []string, header bool, namespace, target string) []
 }
 
 // Render Pod list
-func renderNodeListInfo(nodes []corev1.Node) bool {
+func RenderNodeListInfo(nodes []corev1.Node) bool {
 	if len(nodes) <= 0 {
 		return false
 	}
@@ -679,7 +680,7 @@ func renderNodeListInfo(nodes []corev1.Node) bool {
 	table.SetHeader([]string{"NAME", "STATUS", "INTERNAL-IP", "EXTERNAL-IP", "LABEL", "VERSION", "OS-IMAGE", "AGE"})
 
 	//Get detailed information about Service
-	labelFilters := DEFAULT_NODE_LABEL_FILTERS
+	labelFilters := utils.DEFAULT_NODE_LABEL_FILTERS
 	for _, node := range nodes {
 		objectMeta = node.ObjectMeta
 
@@ -718,7 +719,7 @@ func renderNodeListInfo(nodes []corev1.Node) bool {
 }
 
 //Get Namespace via flag
-func getNamespace() (string, error) {
+func GetNamespace() (string, error) {
 	//Check the flag
 	setAll := viper.GetBool("all")
 	namespace := viper.GetString("namespace")
@@ -730,28 +731,28 @@ func getNamespace() (string, error) {
 		kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 		current, _, err := clientcmd.ClientConfig.Namespace(kubeConfig)
 		if err != nil {
-			return NO_STRING, err
+			return utils.NO_STRING, err
 		}
 
 		namespace = current
 	}
 
-	if setAll && namespace != NO_STRING {
-		namespace = NO_STRING
+	if setAll && namespace != utils.NO_STRING {
+		namespace = utils.NO_STRING
 	}
 
 	return namespace, nil
 }
 
 // Get Current Cluster
-func _get_current_cluster() string {
+func getCurrentCluster() string {
 
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	configOverrides := &clientcmd.ConfigOverrides{}
 	kubeConfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 	rawConfig, err := clientcmd.ClientConfig.RawConfig(kubeConfig)
 	if err != nil {
-		Red(err.Error())
+		utils.Red(err.Error())
 		os.Exit(1)
 	}
 
