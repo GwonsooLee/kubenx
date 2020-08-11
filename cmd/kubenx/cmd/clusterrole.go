@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/spf13/cobra"
 	"io"
 )
@@ -19,12 +21,12 @@ func NewCmdGetClusterRole() *cobra.Command {
 func execGetClusterrole(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
 		// Get All Pods in current namespace
-		clusterRoles, err := getAllRawClusterRoles(ctx, executor.RbacV1Client, NO_STRING)
+		clusterRoles, err := runner.GetAllRawClusterRoles(ctx, executor.RbacV1Client, utils.NO_STRING)
 		if err != nil {
 			return err
 		}
 
-		if !renderClusterRolesListInfo(clusterRoles) {
+		if !runner.RenderClusterRolesListInfo(clusterRoles) {
 			color.Red.Fprintln(out, "No cluster role exists in the namespace")
 		}
 

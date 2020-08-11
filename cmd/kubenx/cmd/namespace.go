@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/spf13/cobra"
 	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,21 +28,21 @@ func execNamespace(ctx context.Context, out io.Writer, args []string) error {
 		var namespaceList []string
 
 		//Get API configuration
-		configs, kubeconfig, err := getAPIConfig()
+		configs, kubeconfig, err := runner.GetAPIConfig()
 		if err != nil {
 			color.Red.Fprintln(out, err.Error())
 			return err
 		}
 
 		// Get Client Configuration
-		currentConfig, err := getCurrentConfig()
+		currentConfig, err := runner.GetCurrentConfig()
 		if err != nil {
 			color.Red.Fprintln(out, err.Error())
 			return err
 		}
 
 		// use the current context in kubeconfig
-		config, err := clientcmd.BuildConfigFromFlags(NO_STRING, *kubeconfig)
+		config, err := clientcmd.BuildConfigFromFlags(utils.NO_STRING, *kubeconfig)
 		if err != nil {
 			color.Red.Fprintln(out, err.Error())
 			return err
@@ -71,7 +73,7 @@ func execNamespace(ctx context.Context, out io.Writer, args []string) error {
 			currentNamespace := currentConfig.Contexts[currentConfig.CurrentContext].Namespace
 
 			// Get New Context
-			Red("[ " + currentContext + " ] Current Namespace: " + currentNamespace)
+			utils.Red("[ " + currentContext + " ] Current Namespace: " + currentNamespace)
 			prompt := &survey.Select{
 				Message: "Choose Context:",
 				Options: namespaceList,

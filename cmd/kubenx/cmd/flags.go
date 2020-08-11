@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -8,10 +9,8 @@ import (
 	"reflect"
 )
 
-// This part of code comes from skaffold opensource.
-// https://github.com/GoogleContainerTools/skaffold
-// Flag defines a Skaffold CLI flag which contains a list of
-// subcommands the flag belongs to in `DefinedOn` field.
+// This part of code comes from Kubenx opensource.
+// https://github.com/GoogleContainerTools/Skaffold
 type Flag struct {
 	Name               string
 	Shorthand          string
@@ -26,19 +25,13 @@ type Flag struct {
 	pflag *pflag.Flag
 }
 
-// FlagRegistry is a list of all Skaffold CLI flags.
-// When adding a new flag to the registry, please specify the
-// command/commands to which the flag belongs in `DefinedOn` field.
-// If the flag is a global flag, or belongs to all the subcommands,
-/// specify "all"
-// FlagAddMethod is method which defines a flag value with specified
-// name, default value, and usage string. e.g. `StringVar`, `BoolVar`
+// FlagRegistry is a list of all Kubenx CLI flags.
 var FlagRegistry = []Flag{
 	{
 		Name:          "namespace",
 		Shorthand:     "n",
 		Usage:         "Run deployments in the specified namespace",
-		Value:         aws.String(NO_STRING),
+		Value:         aws.String(utils.NO_STRING),
 		DefValue:      "",
 		FlagAddMethod: "StringVar",
 		DefinedOn:     []string{"pod", "deployment", "service", "serviceaccount", "configmap", "ingress", "role", "rolebinding", "secret"},
@@ -47,7 +40,7 @@ var FlagRegistry = []Flag{
 		Name:          "region",
 		Shorthand:     "r",
 		Usage:         "Run command to specific region",
-		Value:         aws.String(NO_STRING),
+		Value:         aws.String(utils.NO_STRING),
 		DefValue:      "ap-northeast-2",
 		FlagAddMethod: "StringVar",
 		DefinedOn:     []string{"cluster", "init", "update"},
@@ -99,7 +92,7 @@ func SetCommandFlags(cmd *cobra.Command) {
 		for i := range FlagRegistry {
 			fl := &FlagRegistry[i]
 
-			if isStringInArr(child.Use, fl.DefinedOn) {
+			if utils.IsStringInArray(child.Use, fl.DefinedOn) {
 				child.PersistentFlags().AddFlag(fl.flag())
 				flagsForCommand = append(flagsForCommand, fl)
 			}

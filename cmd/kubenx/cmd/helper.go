@@ -659,7 +659,7 @@ func setKubernetesDefaults(config *rest.Config) error {
 	}
 	if config.NegotiatedSerializer == nil {
 		// This codec factory ensures the resources are not converted. Therefore, resources
-		// will not be round-tripped through internal versions. Defaulting does not happen
+		// will not be round-tripped through runner versions. Defaulting does not happen
 		// on the client.
 		config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	}

@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"github.com/GwonsooLee/kubenx/pkg/aws"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/eks"
 	"github.com/aws/aws-sdk-go/service/iam"
@@ -72,7 +73,7 @@ func runExecutorWithAWSAssume(ctx context.Context, assumeRoleList []string, acti
 func createNewExecutor() (Executor, error) {
 	executor := Executor{}
 
-	config, err := getConfigFromFlag()
+	config, err := runner.GetConfigFromFlag()
 
 	executor.Config = config
 	if err != nil {
@@ -104,7 +105,7 @@ func createNewExecutor() (Executor, error) {
 	executor.RbacV1Client = rbacv1clientset
 
 	//Get Namespace
-	namespace, err := getNamespace()
+	namespace, err := runner.GetNamespace()
 	if err != nil {
 		return executor, err
 	}

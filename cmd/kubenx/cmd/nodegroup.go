@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -12,11 +14,11 @@ var ngCmd = &cobra.Command{
 	Long:  `Command about node group`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 0 {
-			Red("Too many Arguments")
+			utils.Red("Too many Arguments")
 			os.Exit(1)
 		}
 
-		_get_detail_info_of_nodegroup()
+		runner.GetDetailInfoOfNodegroup()
 	},
 	Aliases: []string{"ng"},
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/GwonsooLee/kubenx/pkg/aws"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 	"io"
@@ -40,7 +42,7 @@ func execCluster(ctx context.Context, out io.Writer) error {
 func execGetCluster(ctx context.Context, out io.Writer) error {
 	return runExecutorWithAWS(ctx, func(executor Executor) error {
 		// Check the cluster First
-		cluster, err := GetCurrentCluster()
+		cluster, err := runner.GetCurrentCluster()
 		if err != nil {
 			return err
 		}
@@ -66,7 +68,7 @@ func execGetCluster(ctx context.Context, out io.Writer) error {
 		}
 
 		//Find VPC Name with Name Tag
-		vpcName := NO_STRING
+		vpcName := utils.NO_STRING
 		for _, obj := range vpcInfo.Vpcs[0].Tags {
 			if *obj.Key == "Name" {
 				vpcName = *obj.Value
@@ -94,8 +96,8 @@ func execGetCluster(ctx context.Context, out io.Writer) error {
 			//Retrieve subnet details
 			for _, subnetObj := range subnetInfo.Subnets {
 				az := subnetObj.AvailabilityZone
-				tags := NO_STRING
-				subnetName := NO_STRING
+				tags := utils.NO_STRING
+				subnetName := utils.NO_STRING
 				for _, obj := range subnetObj.Tags {
 					if strings.HasPrefix(*obj.Key, TAG_PREFIX) {
 						line := fmt.Sprintf("%s=%s ", *obj.Key, *obj.Value)
@@ -128,7 +130,7 @@ func execInitCluster(ctx context.Context, out io.Writer) error {
 
 		// Get Cluster Information First
 		// Check the cluster First
-		cluster, err := GetCurrentCluster()
+		cluster, err := runner.GetCurrentCluster()
 		if err != nil {
 			return err
 		}
@@ -215,7 +217,7 @@ func execInitCluster(ctx context.Context, out io.Writer) error {
 						clusterNameSetup = true
 					}
 
-					if *tag.Key == "kubernetes.io/role/internal-elb" && *tag.Value == "1" {
+					if *tag.Key == "kubernetes.io/role/runner-elb" && *tag.Value == "1" {
 						ELBTypeSetup = true
 					}
 
@@ -237,7 +239,7 @@ func execInitCluster(ctx context.Context, out io.Writer) error {
 			color.Red.Fprintln(out, "Step 2. Tags for Public Subnet needs to be updated")
 			aws.UpdateSubnetsTagForCluster(executor.EC2, publicSubnetIds, cluster, "public")
 		} else {
-			Blue("Step 2. Tags for Public Subnet is already updated")
+			utils.Blue("Step 2. Tags for Public Subnet is already updated")
 		}
 
 		// Add Tag if there is private subnet which doesn't have the necessary tags

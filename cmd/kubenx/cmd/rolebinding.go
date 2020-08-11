@@ -3,6 +3,8 @@ package cmd
 import (
 	"context"
 	"github.com/GwonsooLee/kubenx/pkg/color"
+	"github.com/GwonsooLee/kubenx/pkg/runner"
+	"github.com/GwonsooLee/kubenx/pkg/utils"
 	"github.com/spf13/cobra"
 	"io"
 )
@@ -19,12 +21,12 @@ func NewCmdGetRolebinding() *cobra.Command {
 func execGetRoleBinding(ctx context.Context, out io.Writer) error {
 	return runExecutor(ctx, func(executor Executor) error {
 		// Get All Pods in current namespace
-		roles, err := getAllRawRoleBindings(ctx, executor.RbacV1Client, executor.Namespace, NO_STRING)
+		roles, err := runner.GetAllRawRoleBindings(ctx, executor.RbacV1Client, executor.Namespace, utils.NO_STRING)
 		if err != nil {
 			return err
 		}
 
-		if !renderRoleBindingsListInfo(roles) {
+		if !runner.RenderRoleBindingsListInfo(roles) {
 			color.Red.Fprintln(out, "No rolebinding exists in the namespace")
 		}
 

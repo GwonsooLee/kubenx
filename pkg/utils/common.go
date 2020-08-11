@@ -1,4 +1,4 @@
-package cmd
+package utils
 
 import (
 	"fmt"
@@ -37,16 +37,8 @@ var (
 	NO_FILE_EXCEPTION = "No file exists... Please check the file path"
 )
 
-// Get Home Directory
-func homeDir() string {
-	if h := os.Getenv("HOME"); h != "" {
-		return h
-	}
-	return os.Getenv("USERPROFILE") // windows
-}
-
 //Figure out if string is in array
-func isStringInArr(s string, arr []string) bool {
+func IsStringInArray(s string, arr []string) bool {
 	for _, a := range arr {
 		if a == s {
 			return true
@@ -57,7 +49,7 @@ func isStringInArr(s string, arr []string) bool {
 }
 
 // Get Table
-func _get_table_object() *tablewriter.Table {
+func GetTableObject() *tablewriter.Table {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetAutoWrapText(false)
 	table.SetAutoFormatHeaders(true)
@@ -79,7 +71,7 @@ func _int32_to_string(num int32) string {
 }
 
 //Convert int to string
-func _string_to_int(s string) int {
+func StringToInt(s string) int {
 	n, err := strconv.Atoi(s)
 	if err != nil {
 		Red(err)
@@ -89,7 +81,7 @@ func _string_to_int(s string) int {
 }
 
 //Get only one input from user
-func getSingleStringInput(message string) (string, error) {
+func GetSingleStringInput(message string) (string, error) {
 	var ret string
 	prompt := &survey.Input{
 		Message: fmt.Sprintf("%s:", message),

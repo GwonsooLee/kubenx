@@ -112,7 +112,7 @@ func UpdateSubnetsTagForCluster(svc *ec2.EC2, subnets []*string, cluster string,
 				Value: aws.String("shared"),
 			},
 			{
-				Key:   aws.String("kubernetes.io/role/internal-elb"),
+				Key:   aws.String("kubernetes.io/role/runner-elb"),
 				Value: aws.String("1"),
 			},
 		}
